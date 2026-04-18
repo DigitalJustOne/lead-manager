@@ -307,10 +307,10 @@ const DashboardView = React.memo(({ data, user }) => {
         <div className="chart-card glass-panel"><h3 className="chart-title">Top Ciudades</h3>
           <div style={{ height: '250px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={byCity}>
-                <XAxis dataKey="name" fontSize={10} stroke="#444" />
-                <YAxis fontSize={10} stroke="#444" />
-                <Tooltip contentStyle={{ background: '#111', border: 'px solid #333' }} />
+              <BarChart data={byCity} margin={{ bottom: 20 }}>
+                <XAxis dataKey="name" fontSize={10} stroke="#666" tick={{fill: '#666'}} />
+                <YAxis fontSize={10} stroke="#666" tick={{fill: '#666'}} />
+                <Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} />
                 <Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

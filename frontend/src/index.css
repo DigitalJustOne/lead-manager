@@ -145,7 +145,7 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 @media (max-width: 900px) {
   .premium-sidebar { display: none; }
   
-  .main-content { padding: 16px; padding-bottom: 90px; }
+  .main-content { padding: 16px; padding-bottom: 120px; }
   
   .mobile-nav {
     display: flex; justify-content: space-around; align-items: center;
