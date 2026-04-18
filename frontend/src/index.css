@@ -171,9 +171,22 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
   .stat-value { font-size: 1.1rem; }
   .stat-label { font-size: 0.7rem; }
   
-  .side-panel { width: 100%; }
-  .panel-header, .panel-content, .panel-footer { padding: 20px; }
-  .panel-footer { padding-bottom: 110px; } /* Extra space for mobile nav */
+  .side-panel { width: 100%; height: 100%; }
+  .panel-header, .panel-content { padding: 20px; }
+  .panel-footer { 
+    position: fixed; 
+    bottom: 85px; /* Floats above the 70px mobile nav */
+    left: 10px;
+    right: 10px;
+    width: calc(100% - 20px);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 -10px 25px rgba(0,0,0,0.5);
+    padding: 16px;
+    background: var(--bg-sidebar);
+    z-index: 2500;
+  }
+  .panel-content { padding-bottom: 180px; } /* Space for the floating footer */
 
 @media (max-width: 600px) {
   .main-content { padding: 16px; }
