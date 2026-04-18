@@ -110,9 +110,9 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 
 .data-grid-container { 
   background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border);
-  overflow: hidden; margin-top: 24px;
+  overflow-x: auto; margin-top: 24px;
 }
-.data-grid { width: 100%; border-collapse: collapse; text-align: left; }
+.data-grid { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; }
 .data-grid th { padding: 16px 24px; font-size: 0.75rem; font-weight: 700; color: #444; border-bottom: 1px solid var(--border-color); text-transform: uppercase; }
 .data-grid td { padding: 18px 24px; border-bottom: 1px solid var(--border-color); transition: background 0.2s; cursor: pointer; }
 .data-grid tr:last-child td { border-bottom: none; }
