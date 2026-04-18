@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Users, BarChart3, Upload, Search, Filter, 
   ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut,
-  TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database, Zap, Plus
+  TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database, Zap, Plus,
+  Menu, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
