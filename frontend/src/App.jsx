@@ -367,11 +367,12 @@ function UploadView({ onSuccess }) {
         {!result ? (
           <>
             <div className="file-drop-zone" onClick={() => fileInput.current?.click()} style={{border:'2px dashed #444', padding:'40px', borderRadius:'16px', cursor:'pointer', background:'rgba(255,255,255,0.02)'}}>
-              <input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" multiple onChange={handleFileChange} />
+              <input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx, .csv" multiple onChange={handleFileChange} />
               <Upload size={48} className="text-muted" />
               {files.length > 0 ? (
                 <div style={{marginTop:'16px'}}>
                   <p className="font-bold">{files.length} archivos seleccionados</p>
+                  <p className="text-xs text-muted mb-2">Soporta Excel (.xlsx) y CSV</p>
                   <ul style={{listStyle:'none', padding:0, fontSize:'12px', color:'var(--text-muted)', marginTop:'8px'}}>
                     {files.slice(0, 5).map((f, i) => <li key={i}>{f.name}</li>)}
                     {files.length > 5 && <li>...y {files.length - 5} más</li>}
