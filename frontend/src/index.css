@@ -192,7 +192,8 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 @media (max-width: 600px) {
   .main-content { padding: 16px; }
   .mobile-niche { display: block; margin-top: 4px; color: var(--accent-primary); }
-  .data-grid td:nth-child(2), .data-grid td:nth-child(3) { display: none; }
+  .data-grid th:nth-child(2), .data-grid td:nth-child(2),
+  .data-grid th:nth-child(3), .data-grid td:nth-child(3) { display: none; }
 }
 
 .fade-in { animation: fadeIn 0.4s ease-out; }

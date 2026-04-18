@@ -115,7 +115,8 @@ function App() {
     if (statusFilter) result = result.filter(l => l.status === statusFilter);
     if (websiteFilter === 'con') result = result.filter(l => l.website?.trim());
     else if (websiteFilter === 'sin') result = result.filter(l => !l.website?.trim());
-    if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) * (b.rating || 0) - (a.reviews || 0) * (a.rating || 0));
+    if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+    else if (sortBy === 'reviews_asc') result.sort((a, b) => (a.reviews || 0) - (b.reviews || 0));
     else if (sortBy === 'name_asc') result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return result;
   }, [debouncedSearch, statusFilter, websiteFilter, sortBy, leads]);
@@ -212,6 +213,12 @@ function App() {
               <div><h2>Directorio Maestro</h2><p className="text-muted text-sm">{filteredLeads.length} Registros</p></div>
               <div className="flex-item-center" style={{ gap: '12px', flexWrap: 'wrap' }}>
                 <div className="input-field search-box"><Search size={16} className="text-muted" /><input type="text" placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+                <select className="input-field filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="">Ordenar por...</option>
+                  <option value="reviews_desc">🔥 Más Reseñas</option>
+                  <option value="reviews_asc">❄️ Menos Reseñas</option>
+                  <option value="name_asc">🔤 Nombre (A-Z)</option>
+                </select>
                 <select className="input-field filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">Estado...</option><option value="Cliente Cerrado">✅ Cerrado</option><option value="Lead Potencial">⭐ Potencial</option><option value="Pendiente">⏳ Pendiente</option>
                 </select>
