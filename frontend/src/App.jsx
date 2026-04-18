@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Users, BarChart3, Upload, Search, Filter, 
   ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut,
-  TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database
+  TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database, Zap, Plus
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
@@ -115,6 +115,7 @@ function App() {
     if (statusFilter) result = result.filter(l => l.status === statusFilter);
     if (websiteFilter === 'con') result = result.filter(l => l.website?.trim());
     else if (websiteFilter === 'sin') result = result.filter(l => !l.website?.trim());
+    
     if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
     else if (sortBy === 'reviews_asc') result.sort((a, b) => (a.reviews || 0) - (b.reviews || 0));
     else if (sortBy === 'name_asc') result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -192,7 +193,8 @@ function App() {
             <button onClick={() => switchView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
             <button onClick={() => switchView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
           </div>
-          <div className="nav-group"><span className="nav-label">Sistema</span>
+          <div className="nav-group"><span className="nav-label">Herramientas AI</span>
+            <button onClick={() => switchView('discovery')} className={`nav-link ${view === 'discovery' ? 'active' : ''}`}><Zap size={18} /> <span>Explorar Leads</span></button>
             <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar</span></button>
           </div>
         </nav>
@@ -207,6 +209,7 @@ function App() {
 
       <main className="main-content">
         {view === 'dashboard' && <DashboardView data={statsData} user={session.user.email} />}
+        {view === 'discovery' && <DiscoveryView onSuccess={() => { setView('list'); fetchLeads(); }} />}
         {view === 'list' && (
           <div className="fade-in">
             <header className="main-header glass-header">
@@ -221,9 +224,6 @@ function App() {
                 </select>
                 <select className="input-field filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">Estado...</option><option value="Cliente Cerrado">✅ Cerrado</option><option value="Lead Potencial">⭐ Potencial</option><option value="Pendiente">⏳ Pendiente</option>
-                </select>
-                <select className="input-field filter-select" value={websiteFilter} onChange={(e) => setWebsiteFilter(e.target.value)}>
-                  <option value="">Web...</option><option value="con">✅ Con Web</option><option value="sin">🚫 Sin Web</option>
                 </select>
               </div>
             </header>
@@ -304,7 +304,7 @@ function App() {
       <nav className="mobile-nav">
         <button onClick={() => switchView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
         <button onClick={() => switchView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
-        <button onClick={() => switchView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
+        <button onClick={() => switchView('discovery')} className={`mobile-nav-item ${view === 'discovery' ? 'active' : ''}`}><Zap size={24} /><span>Explorar</span></button>
         <button onClick={handleLogout} className="mobile-nav-item"><LogOut size={24} /><span>Salir</span></button>
       </nav>
     </div>
@@ -337,6 +337,64 @@ const DashboardView = React.memo(({ data, user }) => {
 const StatCard = ({ icon, val, label, color }) => (
   <div className="stat-card glass-panel"><div className="stat-icon" style={{ background: `${color}15`, color: color }}>{icon}</div><div><div className="stat-value">{val}</div><div className="stat-label">{label}</div></div></div>
 );
+
+function DiscoveryView({ onSuccess }) {
+  const [token, setToken] = useState('');
+  const [query, setQuery] = useState('');
+  const [max, setMax] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [results, setResult] = useState(null);
+
+  const startScrape = async () => {
+    if (!query) return;
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/scrape`, { queries: [query], maxItems: parseInt(max), token });
+      setResult(res.data);
+    } catch (e) { alert('Error: ' + (e.response?.data?.error || e.message)); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto', paddingTop: '40px' }}>
+      <div className="glass-panel" style={{ padding: '40px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <Zap size={48} color="var(--accent-primary)" style={{ margin: '0 auto 16px' }} />
+          <h2>Explorador Inteligente</h2>
+          <p className="text-muted text-sm mt-2">Extrae leads frescos de Google Maps usando Apify</p>
+        </div>
+
+        {!results ? (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div className="input-group">
+              <label>Tu Apify API Token (opcional si ya está en el servidor)</label>
+              <input type="password" title="Si lo dejas vacío, usará el del servidor" className="input-field" value={token} onChange={e => setToken(e.target.value)} placeholder="apify_api_..." />
+            </div>
+            <div className="input-group">
+              <label>¿Qué quieres buscar? (Ej: Peluquerías en Cali)</label>
+              <input type="text" className="input-field" value={query} onChange={e => setQuery(e.target.value)} placeholder="Nicho + Ciudad" />
+            </div>
+            <div className="input-group">
+              <label>Cantidad de Leads a capturar ({max})</label>
+              <input type="range" min="1" max="100" className="w-full" value={max} onChange={e => setMax(e.target.value)} />
+            </div>
+            <button className="btn btn-primary w-full mt-4" disabled={loading} onClick={startScrape}>
+              {loading ? 'Scrapeando en la nube (esto tarda 1-3 min)...' : 'Lanzar Búsqueda'}
+            </button>
+            <p className="text-xs text-muted text-center mt-2">Nota: Esta acción consumirá créditos de tu cuenta de Apify.</p>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center' }}>
+            <CheckCircle size={64} color="#10b981" style={{ margin: '0 auto 16px' }} />
+            <h3>¡Scrapeo Exitoso!</h3>
+            <p className="text-muted mt-2">Se han importado **{results.imported}** nuevos prospectos directamente a tu CRM.</p>
+            <button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes Importados</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function UploadView({ onSuccess }) {
   const fileInput = useRef(null);

@@ -149,6 +149,52 @@ app.put('/api/leads/:id', async (req, res) => {
     }
 });
 
+// APYFY SCRAPER ROUTE
+const { ApifyClient } = require('apify-client');
+app.post('/api/scrape', async (req, res) => {
+    const { queries, maxItems, token } = req.body;
+    const apifyToken = token || process.env.APIFY_TOKEN;
+
+    if (!apifyToken) return res.status(400).json({ error: 'Apify Token Required' });
+
+    try {
+        const client = new ApifyClient({ token: apifyToken });
+        
+        // Lanzamos el actor de Google Maps Scraper (el más común)
+        const run = await client.actor('apify/google-maps-scraper').call({
+            queries: queries,
+            maxItems: maxItems || 10,
+            searchMatchingOnPage: false,
+        });
+
+        const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+        const leadsToInsert = items.map(item => ({
+            place_id: item.placeId || item.id || (item.phone + item.title),
+            name: item.title,
+            category: item.categoryName,
+            phone: item.phone,
+            website: item.url || item.website,
+            city: item.city || item.address?.split(',').slice(-2, -1)[0]?.trim(),
+            address: item.address,
+            rating: item.totalScore || 0,
+            reviews: item.reviewsCount || 0,
+            status: 'Pendiente'
+        }));
+
+        const { error } = await supabase
+            .from('leads')
+            .upsert(leadsToInsert, { onConflict: 'place_id' });
+
+        if (error) throw error;
+
+        res.json({ message: 'Success', imported: leadsToInsert.length });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(port, () => {
     console.log(`CRM Cloud Backend (Supabase) running at http://localhost:${port}`);
 });
