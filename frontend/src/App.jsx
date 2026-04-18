@@ -56,6 +56,7 @@ function App() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterWebsite, setFilterWebsite] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  const [activeTab, setActiveTab] = useState('all'); // all, pending, active, closed
   const [visibleCount, setVisibleCount] = useState(50);
 
   const [email, setEmail] = useState('');
@@ -115,16 +116,25 @@ function App() {
     }
     
     result = result.filter(lead => {
+      // Filtrado por Pestaña (Embudo)
+      if (activeTab === 'pending' && lead.status !== 'Pendiente') return false;
+      if (activeTab === 'active' && !['Lead Potencial', 'Contactado', 'Cita Agendada'].includes(lead.status)) return false;
+      if (activeTab === 'closed' && !['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado'].includes(lead.status)) return false;
+
+      // Otros Filtros
       if (filterStatus !== 'All' && lead.status !== filterStatus) return false;
       if (filterWebsite === 'yes' && !lead.website) return false;
       if (filterWebsite === 'no' && lead.website) return false;
       return true;
     });
     
-    if (sortBy === 'reviews') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
-    else if (sortBy === 'rating') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    // Sort logic
+    if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+    else if (sortBy === 'reviews_asc') result.sort((a, b) => (a.reviews || 0) - (b.reviews || 0));
+    else if (sortBy === 'rating_desc') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    else if (sortBy === 'rating_asc') result.sort((a, b) => (a.rating || 0) - (b.rating || 0));
     return result;
-  }, [debouncedSearch, filterStatus, filterWebsite, sortBy, leads]);
+  }, [debouncedSearch, filterStatus, filterWebsite, sortBy, leads, activeTab]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
 
@@ -235,7 +245,15 @@ function App() {
         {view === 'list' && (
           <div className="fade-in">
             <header className="main-header glass-header">
-              <div><h2>Directorio Maestro</h2><p className="text-muted text-sm">{filteredLeads.length} Registros</p></div>
+              <div className="flex-col">
+                <h2>Directorio Maestro</h2>
+                <div className="view-tabs mt-2">
+                  <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>Todos</button>
+                  <button className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>📥 Nuevos</button>
+                  <button className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>🎯 En Gestión</button>
+                  <button className={`tab-btn ${activeTab === 'closed' ? 'active' : ''}`} onClick={() => setActiveTab('closed')}>🏁 Finalizados</button>
+                </div>
+              </div>
               <div className="filters-container">
                 <div className="search-box">
                   <Search size={18} />
@@ -251,18 +269,24 @@ function App() {
                     <Filter size={14} />
                     <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
                       <option value="newest">Más recientes</option>
-                      <option value="rating">Mejor Rating</option>
-                      <option value="reviews">Más Reseñas</option>
+                      <option value="rating_desc">Mejor Rating (5 → 1)</option>
+                      <option value="rating_asc">Menor Rating (1 → 5)</option>
+                      <option value="reviews_desc">Más Reseñas</option>
+                      <option value="reviews_asc">Menos Reseñas</option>
                     </select>
                   </div>
 
                   <div className="select-wrapper">
                     <Target size={14} />
                     <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                      <option value="All">Todos los Estados</option>
+                      <option value="All">Cualquier Estado</option>
                       <option value="Pendiente">⏳ Pendiente</option>
+                      <option value="Contactado">📞 Contactado</option>
                       <option value="Lead Potencial">⭐ VIP/Potencial</option>
-                      <option value="Cliente Cerrado">✅ Cerrado</option>
+                      <option value="Cita Agendada">📅 Cita Agendada</option>
+                      <option value="Venta Cerrada">✅ Venta Ganada</option>
+                      <option value="Lead Perdido">🗑️ Perdido</option>
+                      <option value="Número Equivocado">❌ Nro Erróneo</option>
                     </select>
                   </div>
 
@@ -340,7 +364,23 @@ function App() {
                 </div>
               </div>
 
-              <div className="input-group"><label>Estado de Gestión</label><select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}><option value="Pendiente">⏳ Pendiente</option><option value="Lead Potencial">⭐ Lead Potencial</option><option value="Cliente Cerrado">✅ Cliente Cerrado</option></select></div>
+              <div className="input-group">
+                <label>Estado de Gestión</label>
+                <select 
+                  className="input-field w-full" 
+                  value={editStatus} 
+                  onChange={e => setEditStatus(e.target.value)}
+                  style={{ background: 'var(--bg-card)', fontSize: '0.95rem' }}
+                >
+                  <option value="Pendiente">⏳ Pendiente</option>
+                  <option value="Contactado">📞 Contactado</option>
+                  <option value="Lead Potencial">⭐ VIP / Potencial</option>
+                  <option value="Cita Agendada">📅 Cita Agendada</option>
+                  <option value="Venta Cerrada">✅ Venta Ganada</option>
+                  <option value="Lead Perdido">🗑️ Lead Perdido</option>
+                  <option value="Número Equivocado">❌ Número Equivocado</option>
+                </select>
+              </div>
               <div className="input-group"><label>Notas del Seguimiento</label><textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{ height: '150px' }} placeholder="Escribe aquí los detalles de la conversación..."></textarea></div>
             </div>
             <div className="panel-footer glass-header">
@@ -371,7 +411,9 @@ const DashboardView = React.memo(({ data, user, onRefresh, loading }) => {
           <p className="page-subtitle">Rendimiento en tiempo real.</p>
         </div>
         <button className={`btn btn-secondary ${loading ? 'spin' : ''}`} onClick={onRefresh} style={{ padding: '10px' }}>
-          <Zap size={18} fill={loading ? "currentColor" : "none"} /> {loading ? 'Actualizando...' : 'Refrescar'}
+          <Zap size={18} fill={loading ? "currentColor" : "none"} /> 
+          <span className="desktop-only">{loading ? 'Actualizando...' : 'Refrescar'}</span>
+          <span className="mobile-only">{loading ? '...' : ''}</span>
         </button>
       </header>
       <div className="stats-grid">

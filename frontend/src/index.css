@@ -212,6 +212,53 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 .login-card { width: 400px; padding: 48px; }
 .text-gradient { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
+/* Responsive Helpers */
+.desktop-only { display: inline; }
+.mobile-only { display: none; }
+
+@media (max-width: 600px) {
+  .desktop-only { display: none; }
+  .mobile-only { display: inline; }
+}
+
+/* Tabs for Flow/Pipeline */
+.view-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px;
+  border-radius: 10px;
+  width: fit-content;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.flex-col { display: flex; flex-direction: column; }
+.mt-2 { margin-top: 8px; }
+
 /* Filters & Search UI */
 .filters-container {
   display: flex;
