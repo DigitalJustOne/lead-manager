@@ -233,8 +233,10 @@ function App() {
                 <tbody>{visibleLeads.map(l => <LeadRow key={l.id} lead={l} onOpen={openPanel} />)}</tbody>
               </table>
               {visibleCount < filteredLeads.length && (
-                <div style={{padding:'20px', textAlign:'center'}}>
-                  <button className="btn btn-secondary" style={{margin:'0 auto'}} onClick={() => setVisibleCount(v => v + 50)}>Cargar más resultados...</button>
+                <div style={{ padding: '40px 20px 120px 20px', textAlign: 'center' }}>
+                  <button className="btn btn-secondary" style={{ margin: '0 auto', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }} onClick={() => setVisibleCount(v => v + 50)}>
+                    Cargar más resultados ({filteredLeads.length - visibleCount} restantes)
+                  </button>
                 </div>
               )}
             </div>
@@ -251,9 +253,45 @@ function App() {
               <button onClick={() => setSelectedLead(null)} className="btn-close"><X size={24} /></button>
             </div>
             <div className="panel-content">
-              <div className="glass-panel mb-4" style={{ padding: '16px' }}><div style={{ display: 'grid', gap: '12px' }}><div className="flex-between text-sm"><span>Teléfono</span><a href={`tel:${selectedLead.phone}`} style={{color:'var(--accent-primary)', textDecoration:'none'}}>{selectedLead.phone}</a></div><div className="flex-between text-sm"><span>Ciudad</span><span>{selectedLead.city}</span></div></div></div>
-              <div className="input-group"><label>Estado</label><select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}><option value="Pendiente">Pendiente</option><option value="Lead Potencial">Lead Potencial</option><option value="Cliente Cerrado">Cliente Cerrado</option></select></div>
-              <div className="input-group"><label>Notas</label><textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{height:'120px'}}></textarea></div>
+              <div className="glass-panel mb-4" style={{ padding: '20px' }}>
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="flex-between">
+                    <span className="text-muted text-xs uppercase tracking-wider">Valoración</span>
+                    <div className="flex-item-center" style={{ gap: '4px', color: '#f59e0b' }}>
+                      <Star size={14} fill="#f59e0b" />
+                      <span className="font-bold">{selectedLead.rating || '0.0'}</span>
+                      <span className="text-muted text-xs">({selectedLead.reviews || 0} reseñas)</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-between">
+                    <span className="text-muted text-xs uppercase tracking-wider">Contacto</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <a href={`tel:${selectedLead.phone}`} className="block font-semibold" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>{selectedLead.phone}</a>
+                      {selectedLead.website && <a href={selectedLead.website} target="_blank" rel="noreferrer" className="text-xs text-muted block mt-1">Visitar Sitio Web</a>}
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    <span className="text-muted text-xs uppercase tracking-wider block mb-2">Ubicación</span>
+                    <div className="flex-item-center" style={{ gap: '8px', marginBottom: '8px' }}>
+                      <MapPin size={14} className="text-muted" />
+                      <span className="text-sm">{selectedLead.address || selectedLead.city}</span>
+                    </div>
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedLead.name + ' ' + (selectedLead.address || selectedLead.city))}`}
+                      target="_blank" rel="noreferrer"
+                      className="btn btn-secondary w-full text-xs"
+                      style={{ padding: '8px' }}
+                    >
+                      Ver en Google Maps
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="input-group"><label>Estado de Gestión</label><select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}><option value="Pendiente">⏳ Pendiente</option><option value="Lead Potencial">⭐ Lead Potencial</option><option value="Cliente Cerrado">✅ Cliente Cerrado</option></select></div>
+              <div className="input-group"><label>Notas del Seguimiento</label><textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{ height: '150px' }} placeholder="Escribe aquí los detalles de la conversación..."></textarea></div>
             </div>
             <div className="panel-footer glass-header">
               <button className="btn btn-secondary" onClick={() => setSelectedLead(null)}>Cerrar</button>
