@@ -170,7 +170,10 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
   .stat-icon svg { width: 16px; height: 16px; }
   .stat-value { font-size: 1.1rem; }
   .stat-label { font-size: 0.7rem; }
-}
+  
+  .side-panel { width: 100%; }
+  .panel-header, .panel-content, .panel-footer { padding: 20px; }
+  .panel-footer { padding-bottom: 110px; } /* Extra space for mobile nav */
 
 @media (max-width: 600px) {
   .main-content { padding: 16px; }
@@ -182,12 +185,12 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Side Panel */
-.side-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: flex-end; z-index: 200; }
-.side-panel { width: 450px; background: var(--bg-sidebar); height: 100%; display: flex; flex-direction: column; animation: slideIn 0.3s ease-out; }
+.side-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: flex-end; z-index: 2000; }
+.side-panel { width: 450px; background: var(--bg-sidebar); height: 100%; display: flex; flex-direction: column; animation: slideIn 0.3s ease-out; border-left: 1px solid var(--border-color); }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-.panel-header { padding: 32px; border-bottom: 1px solid var(--border-color); }
-.panel-content { flex: 1; padding: 32px; overflow-y: auto; }
-.panel-footer { padding: 24px 32px; border-top: 1px solid var(--border-color); display: flex; gap: 16px; }
+.panel-header { padding: 32px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
+.panel-content { flex: 1; padding: 32px; overflow-y: auto; padding-bottom: 100px; }
+.panel-footer { padding: 24px 32px; border-top: 1px solid var(--border-color); display: flex; gap: 16px; background: var(--bg-sidebar); position: sticky; bottom: 0; }
 
 /* Login Screen */
 .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-dark); }
