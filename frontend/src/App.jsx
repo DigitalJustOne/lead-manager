@@ -439,7 +439,7 @@ function UploadView({ onSuccess }) {
               </div>
             )}
 
-            <button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes Actualizados</button>
+            <button className="btn btn-primary mt-10 w-full" style={{py: '12px'}} onClick={onSuccess}>Ver Clientes Actualizados</button>
           </div>
         )}
       </div>
