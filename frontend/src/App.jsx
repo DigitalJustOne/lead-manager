@@ -128,6 +128,7 @@ function App() {
     startTransition(() => {
       setView(newView);
       if (newView === 'list') setVisibleCount(50);
+      if (newView === 'dashboard') fetchLeads(); // Recargar al volver al panel
     });
   };
 
@@ -147,18 +148,41 @@ function App() {
   };
 
   const statsData = useMemo(() => {
+    const normalizeStr = (s) => (s || '').toLowerCase();
+    
+    // Fuzzy matching for stats
+    const isClosed = (s) => {
+      const n = normalizeStr(s);
+      return n.includes('cerrado') || n.includes('cliente') || n.includes('ganado') || n.includes('venta');
+    };
+    const isPotential = (s) => {
+      const n = normalizeStr(s);
+      return (n.includes('potencial') || n.includes('lead') || n.includes('interesado')) && !isClosed(s);
+    };
+    const isPending = (s) => {
+      const n = normalizeStr(s);
+      return !s || n.includes('pendiente') || n.includes('espera');
+    };
+
+    const closedLeads = leads.filter(l => isClosed(l.status));
+    const potentialLeads = leads.filter(l => isPotential(l.status));
+    const pendingLeads = leads.filter(l => isPending(l.status));
+    const otherLeadsCount = leads.length - (closedLeads.length + potentialLeads.length + pendingLeads.length);
+
     const stats = {
       total: leads.length,
-      closed: leads.filter(l => l.status === 'Cliente Cerrado').length,
-      potential: leads.filter(l => l.status === 'Lead Potencial').length,
-      pending: leads.filter(l => !l.status || l.status === 'Pendiente').length
+      closed: closedLeads.length,
+      potential: potentialLeads.length,
+      pending: pendingLeads.length
     };
+
     const byStatus = [
       { name: 'Cerrados', value: stats.closed },
       { name: 'Potenciales', value: stats.potential },
       { name: 'Pendientes', value: stats.pending },
-      { name: 'Otros', value: leads.length - (stats.closed+stats.potential+stats.pending) }
-    ];
+      { name: 'Otros', value: Math.max(0, otherLeadsCount) }
+    ].filter(i => i.value > 0); // Solo mostrar si hay datos
+
     const cityMap = leads.reduce((acc, l) => { acc[l.city || 'Otros'] = (acc[l.city || 'Otros'] || 0) + 1; return acc; }, {});
     const byCity = Object.keys(cityMap).map(k => ({ name: k, leads: cityMap[k] })).sort((a,b) => b.leads - a.leads).slice(0, 5);
     return { stats, byStatus, byCity };
@@ -205,7 +229,7 @@ function App() {
       </aside>
 
       <main className="main-content">
-        {view === 'dashboard' && <DashboardView data={statsData} user={session.user.email} />}
+        {view === 'dashboard' && <DashboardView data={statsData} user={session.user.email} onRefresh={fetchLeads} loading={loading} />}
         {view === 'list' && (
           <div className="fade-in">
             <header className="main-header glass-header">
@@ -307,11 +331,19 @@ function App() {
   );
 }
 
-const DashboardView = React.memo(({ data, user }) => {
+const DashboardView = React.memo(({ data, user, onRefresh, loading }) => {
   const { stats, byStatus, byCity } = data;
   return (
     <div className="dashboard-container fade-in">
-      <header className="page-header"><h2 className="page-title">Hola, {user.split('@')[0]}</h2><p className="page-subtitle">Rendimiento en tiempo real.</p></header>
+      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 className="page-title">Hola, {user.split('@')[0]}</h2>
+          <p className="page-subtitle">Rendimiento en tiempo real.</p>
+        </div>
+        <button className={`btn btn-secondary ${loading ? 'spin' : ''}`} onClick={onRefresh} style={{ padding: '10px' }}>
+          <Zap size={18} fill={loading ? "currentColor" : "none"} /> {loading ? 'Actualizando...' : 'Refrescar'}
+        </button>
+      </header>
       <div className="stats-grid">
         <StatCard icon={<Database />} val={stats.total} label="Total" color="#6366f1" />
         <StatCard icon={<CheckCircle />} val={stats.closed} label="Cerrados" color="#10b981" />
