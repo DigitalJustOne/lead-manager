@@ -192,10 +192,7 @@ function App() {
           <div className="nav-group"><span className="nav-label">General</span>
             <button onClick={() => switchView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
             <button onClick={() => switchView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
-          </div>
-          <div className="nav-group"><span className="nav-label">Herramientas AI</span>
-            <button onClick={() => switchView('discovery')} className={`nav-link ${view === 'discovery' ? 'active' : ''}`}><Zap size={18} /> <span>Explorar Leads</span></button>
-            <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar</span></button>
+            <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar Masivo</span></button>
           </div>
         </nav>
         <div className="sidebar-footer">
@@ -209,7 +206,6 @@ function App() {
 
       <main className="main-content">
         {view === 'dashboard' && <DashboardView data={statsData} user={session.user.email} />}
-        {view === 'discovery' && <DiscoveryView onSuccess={() => { setView('list'); fetchLeads(); }} />}
         {view === 'list' && (
           <div className="fade-in">
             <header className="main-header glass-header">
@@ -304,7 +300,7 @@ function App() {
       <nav className="mobile-nav">
         <button onClick={() => switchView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
         <button onClick={() => switchView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
-        <button onClick={() => switchView('discovery')} className={`mobile-nav-item ${view === 'discovery' ? 'active' : ''}`}><Zap size={24} /><span>Explorar</span></button>
+        <button onClick={() => switchView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
         <button onClick={handleLogout} className="mobile-nav-item"><LogOut size={24} /><span>Salir</span></button>
       </nav>
     </div>
@@ -338,83 +334,64 @@ const StatCard = ({ icon, val, label, color }) => (
   <div className="stat-card glass-panel"><div className="stat-icon" style={{ background: `${color}15`, color: color }}>{icon}</div><div><div className="stat-value">{val}</div><div className="stat-label">{label}</div></div></div>
 );
 
-function DiscoveryView({ onSuccess }) {
-  const [token, setToken] = useState('');
-  const [query, setQuery] = useState('');
-  const [max, setMax] = useState(10);
-  const [loading, setLoading] = useState(false);
-  const [results, setResult] = useState(null);
-
-  const startScrape = async () => {
-    if (!query) return;
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API_URL}/scrape`, { queries: [query], maxItems: parseInt(max), token });
-      setResult(res.data);
-    } catch (e) { alert('Error: ' + (e.response?.data?.error || e.message)); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto', paddingTop: '40px' }}>
-      <div className="glass-panel" style={{ padding: '40px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Zap size={48} color="var(--accent-primary)" style={{ margin: '0 auto 16px' }} />
-          <h2>Explorador Inteligente</h2>
-          <p className="text-muted text-sm mt-2">Extrae leads frescos de Google Maps usando Apify</p>
-        </div>
-
-        {!results ? (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div className="input-group">
-              <label>Tu Apify API Token (opcional si ya está en el servidor)</label>
-              <input type="password" title="Si lo dejas vacío, usará el del servidor" className="input-field" value={token} onChange={e => setToken(e.target.value)} placeholder="apify_api_..." />
-            </div>
-            <div className="input-group">
-              <label>¿Qué quieres buscar? (Ej: Peluquerías en Cali)</label>
-              <input type="text" className="input-field" value={query} onChange={e => setQuery(e.target.value)} placeholder="Nicho + Ciudad" />
-            </div>
-            <div className="input-group">
-              <label>Cantidad de Leads a capturar ({max})</label>
-              <input type="range" min="1" max="100" className="w-full" value={max} onChange={e => setMax(e.target.value)} />
-            </div>
-            <button className="btn btn-primary w-full mt-4" disabled={loading} onClick={startScrape}>
-              {loading ? 'Scrapeando en la nube (esto tarda 1-3 min)...' : 'Lanzar Búsqueda'}
-            </button>
-            <p className="text-xs text-muted text-center mt-2">Nota: Esta acción consumirá créditos de tu cuenta de Apify.</p>
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center' }}>
-            <CheckCircle size={64} color="#10b981" style={{ margin: '0 auto 16px' }} />
-            <h3>¡Scrapeo Exitoso!</h3>
-            <p className="text-muted mt-2">Se han importado **{results.imported}** nuevos prospectos directamente a tu CRM.</p>
-            <button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes Importados</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function UploadView({ onSuccess }) {
   const fileInput = useRef(null);
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
+
   const handleUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
     setUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
+    for (let i = 0; i < files.length; i++) {
+      formData.append('files', files[i]);
+    }
     try {
       const res = await axios.post(`${API_URL}/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setResult(res.data);
-    } catch (e) { alert('Error'); }
+    } catch (e) { alert('Error subiendo archivos'); }
     finally { setUploading(false); }
   };
+
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
   return (
     <div className="fade-in" style={{maxWidth:'600px', margin:'0 auto', paddingTop:'40px'}}>
-      <div className="glass-panel" style={{ padding: '40px', textAlign:'center' }}><h2 className="text-xl font-bold mb-6">Importar Leads</h2>{!result ? (<><div className="file-drop-zone" onClick={() => fileInput.current?.click()} style={{border:'2px dashed #333', padding:'40px', borderRadius:'16px'}}><input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" onChange={e => setFile(e.target.files?.[0])} /><Upload size={48} className="text-muted" />{file ? <p className="mt-4 font-bold">{file.name}</p> : <p className="mt-4 text-muted">Haz clic para subir Excel</p>}</div><button className="btn btn-primary mt-6 w-full" disabled={!file || uploading} onClick={handleUpload}>{uploading ? 'Cargando...' : 'Iniciar Importación'}</button></>) : (<div><CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/><h3>¡Completado!</h3><p className="text-muted mt-2">{result.imported} nuevos leads.</p><button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes</button></div>)}</div>
+      <div className="glass-panel" style={{ padding: '40px', textAlign:'center' }}>
+        <h2 className="text-xl font-bold mb-6">Carga Masiva (Excel)</h2>
+        {!result ? (
+          <>
+            <div className="file-drop-zone" onClick={() => fileInput.current?.click()} style={{border:'2px dashed #444', padding:'40px', borderRadius:'16px', cursor:'pointer', background:'rgba(255,255,255,0.02)'}}>
+              <input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" multiple onChange={handleFileChange} />
+              <Upload size={48} className="text-muted" />
+              {files.length > 0 ? (
+                <div style={{marginTop:'16px'}}>
+                  <p className="font-bold">{files.length} archivos seleccionados</p>
+                  <ul style={{listStyle:'none', padding:0, fontSize:'12px', color:'var(--text-muted)', marginTop:'8px'}}>
+                    {files.slice(0, 5).map((f, i) => <li key={i}>{f.name}</li>)}
+                    {files.length > 5 && <li>...y {files.length - 5} más</li>}
+                  </ul>
+                </div>
+              ) : <p className="mt-4 text-muted">Haz clic para seleccionar uno o varios archivos Excel</p>}
+            </div>
+            <button className="btn btn-primary mt-6 w-full" disabled={files.length === 0 || uploading} onClick={handleUpload}>
+              {uploading ? 'Procesando archivos...' : `Importar ${files.length} Archivos`}
+            </button>
+          </>
+        ) : (
+          <div>
+            <CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/>
+            <h3>¡Importación Exitosa!</h3>
+            <p className="text-muted mt-2">Se han procesado **{result.total_processed}** leads correctamente.</p>
+            <button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes Actualizados</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -27,54 +27,58 @@ const parseField = (row, fields) => {
     return '';
 };
 
-// Importar Excel Route
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file uploaded.');
+// Importar Excel Route (Múltiples archivos)
+app.post('/api/upload', upload.array('files'), async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).send('No files uploaded.');
     }
 
+    let totalImported = 0;
     try {
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        for (const file of req.files) {
+            const workbook = xlsx.readFile(file.path);
+            const sheetName = workbook.SheetNames[0];
+            const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        const leadsToInsert = data.map(row => {
-            const place_id = parseField(row, ['place_id', 'google_id', 'website', 'phone']);
-            const name = parseField(row, ['name']);
-            const phone = parseField(row, ['phone']);
-            
-            if (!place_id && !phone && !name) return null;
+            const leadsToInsert = data.map(row => {
+                const place_id = parseField(row, ['place_id', 'google_id', 'website', 'phone']);
+                const name = parseField(row, ['name']);
+                const phone = parseField(row, ['phone']);
+                
+                if (!place_id && !phone && !name) return null;
 
-            return {
-                place_id: place_id || (phone + name),
-                category: parseField(row, ['category', 'subtypes', 'type']),
-                name: name,
-                phone: phone,
-                website: parseField(row, ['website']),
-                city: parseField(row, ['city']),
-                country: parseField(row, ['country']),
-                rating: parseFloat(row['rating']) || 0,
-                reviews: parseInt(row['reviews']) || 0,
-                status: 'Pendiente'
-            };
-        }).filter(l => l !== null);
+                return {
+                    place_id: place_id || (phone + name),
+                    category: parseField(row, ['category', 'subtypes', 'type']),
+                    name: name,
+                    phone: phone,
+                    website: parseField(row, ['website']),
+                    city: parseField(row, ['city']),
+                    country: parseField(row, ['country']),
+                    rating: parseFloat(row['rating']) || 0,
+                    reviews: parseInt(row['reviews']) || 0,
+                    status: 'Pendiente'
+                };
+            }).filter(l => l !== null);
 
-        // Supabase upsert handles deduplication via place_id
-        const { error } = await supabase
-            .from('leads')
-            .upsert(leadsToInsert, { onConflict: 'place_id' });
+            if (leadsToInsert.length > 0) {
+                const { error } = await supabase
+                    .from('leads')
+                    .upsert(leadsToInsert, { onConflict: 'place_id' });
+                if (error) throw error;
+                totalImported += leadsToInsert.length;
+            }
+            fs.unlinkSync(file.path);
+        }
 
-        if (error) throw error;
-
-        fs.unlinkSync(req.file.path);
         res.json({
             message: 'Upload complete',
-            total_processed: data.length
+            total_processed: totalImported
         });
 
     } catch (e) {
         console.error(e);
-        res.status(500).json({ error: 'Failed to process excel file', details: e.message });
+        res.status(500).json({ error: 'Failed to process files', details: e.message });
     }
 });
 
@@ -146,52 +150,6 @@ app.put('/api/leads/:id', async (req, res) => {
         });
     } catch (e) {
         res.status(400).json({ error: e.message });
-    }
-});
-
-// APYFY SCRAPER ROUTE
-const { ApifyClient } = require('apify-client');
-app.post('/api/scrape', async (req, res) => {
-    const { queries, maxItems, token } = req.body;
-    const apifyToken = token || process.env.APIFY_TOKEN;
-
-    if (!apifyToken) return res.status(400).json({ error: 'Apify Token Required' });
-
-    try {
-        const client = new ApifyClient({ token: apifyToken });
-        
-        // Lanzamos el actor de Google Maps Scraper (el más común)
-        const run = await client.actor('apify/google-maps-scraper').call({
-            queries: queries,
-            maxItems: maxItems || 10,
-            searchMatchingOnPage: false,
-        });
-
-        const { items } = await client.dataset(run.defaultDatasetId).listItems();
-
-        const leadsToInsert = items.map(item => ({
-            place_id: item.placeId || item.id || (item.phone + item.title),
-            name: item.title,
-            category: item.categoryName,
-            phone: item.phone,
-            website: item.url || item.website,
-            city: item.city || item.address?.split(',').slice(-2, -1)[0]?.trim(),
-            address: item.address,
-            rating: item.totalScore || 0,
-            reviews: item.reviewsCount || 0,
-            status: 'Pendiente'
-        }));
-
-        const { error } = await supabase
-            .from('leads')
-            .upsert(leadsToInsert, { onConflict: 'place_id' });
-
-        if (error) throw error;
-
-        res.json({ message: 'Success', imported: leadsToInsert.length });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
     }
 });
 
