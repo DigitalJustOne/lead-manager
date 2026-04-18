@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+.mobile-niche { display: none; }
+
 :root {
   --bg-dark: #0a0a0c;
   --bg-card: rgba(20, 20, 24, 0.6);
@@ -439,8 +441,7 @@ textarea.input-field {
     width: 100%;
   }
 
-  .search-box { width: 100% !important; }
-  .filter-select { flex: 1; min-width: 100px; font-size: 11px; padding: 8px !important; }
+  .mobile-niche { display: block !important; }
 
   .data-grid th:nth-child(2), .data-grid td:nth-child(2),
   .data-grid th:nth-child(3), .data-grid td:nth-child(3) { 

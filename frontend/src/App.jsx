@@ -282,8 +282,8 @@ function App() {
                   onChange={(e) => setWebsiteFilter(e.target.value)}
                 >
                   <option value="">🌐 Página Web...</option>
-                  <option value="con">✅ Con Website</option>
-                  <option value="sin">🚫 Sin Website</option>
+                  <option value="con">✅ Tiene Página Web</option>
+                  <option value="sin">🚫 No tiene Página Web</option>
                 </select>
               </div>
             </header>
@@ -309,6 +309,7 @@ function App() {
                         <tr key={lead.id} onClick={() => openPanel(lead)}>
                           <td>
                             <div className="font-semibold">{lead.name}</div>
+                            <div className="text-xs text-muted mobile-niche" style={{ marginTop: '2px' }}>{lead.category}</div>
                             {lead.rating > 0 && (
                               <div className="flex-item-center text-sm text-muted" style={{ marginTop: '4px' }}>
                                 <Star size={12} fill="var(--status-pending)" color="var(--status-pending)" /> 
