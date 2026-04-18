@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, startTransition } from 'react';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { 
@@ -17,13 +17,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-// Optimized Row Component
 const LeadRow = React.memo(({ lead, onOpen }) => (
   <tr onClick={() => onOpen(lead)}>
-    <td>
-      <div className="font-semibold">{lead.name}</div>
-      <div className="text-xs text-muted mobile-niche">{lead.category}</div>
-    </td>
+    <td><div className="font-semibold">{lead.name}</div><div className="text-xs text-muted mobile-niche">{lead.category}</div></td>
     <td className="text-sm text-muted">{lead.category}</td>
     <td className="text-sm text-muted">{lead.city}</td>
     <td className="text-sm">
@@ -59,6 +55,7 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('');
   const [websiteFilter, setWebsiteFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const [visibleCount, setVisibleCount] = useState(50);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,9 +73,13 @@ function App() {
     if (session) fetchLeads();
   }, [session]);
 
-  // Debounce search to improve performance (INP FIX)
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    const timer = setTimeout(() => {
+      startTransition(() => {
+        setDebouncedSearch(search);
+        setVisibleCount(50);
+      });
+    }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -107,23 +108,26 @@ function App() {
   const filteredLeads = useMemo(() => {
     const normalize = (t) => t?.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() || '';
     let result = [...leads];
-    
     if (debouncedSearch) {
       const q = normalize(debouncedSearch);
-      result = result.filter(l => 
-        normalize(l.name).includes(q) || normalize(l.category).includes(q) || 
-        normalize(l.city).includes(q) || normalize(l.phone).includes(q)
-      );
+      result = result.filter(l => normalize(l.name).includes(q) || normalize(l.category).includes(q) || normalize(l.city).includes(q) || normalize(l.phone).includes(q));
     }
     if (statusFilter) result = result.filter(l => l.status === statusFilter);
     if (websiteFilter === 'con') result = result.filter(l => l.website?.trim());
     else if (websiteFilter === 'sin') result = result.filter(l => !l.website?.trim());
-
     if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) * (b.rating || 0) - (a.reviews || 0) * (a.rating || 0));
     else if (sortBy === 'name_asc') result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    
     return result;
   }, [debouncedSearch, statusFilter, websiteFilter, sortBy, leads]);
+
+  const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
+
+  const switchView = (newView) => {
+    startTransition(() => {
+      setView(newView);
+      if (newView === 'list') setVisibleCount(50);
+    });
+  };
 
   const openPanel = useCallback((lead) => {
     setSelectedLead(lead);
@@ -168,14 +172,8 @@ function App() {
             <p className="text-muted text-sm mt-4">Premium Lead Management</p>
           </div>
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '20px' }}>
-            <div className="input-group">
-              <label>Usuario</label>
-              <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-            <div className="input-group">
-              <label>Contraseña</label>
-              <input type="password" className="input-field" value={password} onChange={e => setPassword(e.target.value)} required />
-            </div>
+            <div className="input-group"><label>Usuario</label><input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+            <div className="input-group"><label>Contraseña</label><input type="password" className="input-field" value={password} onChange={e => setPassword(e.target.value)} required /></div>
             {loginError && <p style={{ color: 'var(--status-negacion)', textAlign: 'center' }}>{loginError}</p>}
             <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Iniciando...' : 'Acceder'}</button>
           </form>
@@ -187,19 +185,14 @@ function App() {
   return (
     <div className="app-container">
       <aside className="sidebar premium-sidebar">
-        <div className="sidebar-header">
-          <div className="brand">
-            <div className="brand-logo"><TrendingUp size={20} /></div>
-            <div><h1 className="brand-name">Global CRM</h1><p className="brand-tagline">Enterprise Edition</p></div>
-          </div>
-        </div>
+        <div className="sidebar-header"><div className="brand"><div className="brand-logo"><TrendingUp size={20} /></div><div><h1 className="brand-name">Global CRM</h1><p className="brand-tagline">Enterprise Edition</p></div></div></div>
         <nav className="sidebar-nav">
           <div className="nav-group"><span className="nav-label">General</span>
-            <button onClick={() => setView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
-            <button onClick={() => setView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
+            <button onClick={() => switchView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
+            <button onClick={() => switchView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
           </div>
           <div className="nav-group"><span className="nav-label">Sistema</span>
-            <button onClick={() => setView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar</span></button>
+            <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar</span></button>
           </div>
         </nav>
         <div className="sidebar-footer">
@@ -230,8 +223,13 @@ function App() {
             <div className="data-grid-container content-scroll mt-6">
               <table className="data-grid">
                 <thead><tr><th>Negocio</th><th>Nicho</th><th>Ciudad</th><th>Contacto</th><th>Estado</th><th></th></tr></thead>
-                <tbody>{filteredLeads.map(l => <LeadRow key={l.id} lead={l} onOpen={openPanel} />)}</tbody>
+                <tbody>{visibleLeads.map(l => <LeadRow key={l.id} lead={l} onOpen={openPanel} />)}</tbody>
               </table>
+              {visibleCount < filteredLeads.length && (
+                <div style={{padding:'20px', textAlign:'center'}}>
+                  <button className="btn btn-secondary" style={{margin:'0 auto'}} onClick={() => setVisibleCount(v => v + 50)}>Cargar más resultados...</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -246,17 +244,8 @@ function App() {
               <button onClick={() => setSelectedLead(null)} className="btn-close"><X size={24} /></button>
             </div>
             <div className="panel-content">
-              <div className="glass-panel mb-4" style={{ padding: '16px' }}>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  <div className="flex-between text-sm"><span>Teléfono</span><a href={`tel:${selectedLead.phone}`} style={{color:'var(--accent-primary)', textDecoration:'none'}}>{selectedLead.phone}</a></div>
-                  <div className="flex-between text-sm"><span>Ciudad</span><span>{selectedLead.city}</span></div>
-                </div>
-              </div>
-              <div className="input-group"><label>Estado</label>
-                <select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}>
-                  <option value="Pendiente">Pendiente</option><option value="Lead Potencial">Lead Potencial</option><option value="Cliente Cerrado">Cliente Cerrado</option>
-                </select>
-              </div>
+              <div className="glass-panel mb-4" style={{ padding: '16px' }}><div style={{ display: 'grid', gap: '12px' }}><div className="flex-between text-sm"><span>Teléfono</span><a href={`tel:${selectedLead.phone}`} style={{color:'var(--accent-primary)', textDecoration:'none'}}>{selectedLead.phone}</a></div><div className="flex-between text-sm"><span>Ciudad</span><span>{selectedLead.city}</span></div></div></div>
+              <div className="input-group"><label>Estado</label><select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}><option value="Pendiente">Pendiente</option><option value="Lead Potencial">Lead Potencial</option><option value="Cliente Cerrado">Cliente Cerrado</option></select></div>
               <div className="input-group"><label>Notas</label><textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{height:'120px'}}></textarea></div>
             </div>
             <div className="panel-footer glass-header">
@@ -268,9 +257,9 @@ function App() {
       )}
 
       <nav className="mobile-nav">
-        <button onClick={() => setView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
-        <button onClick={() => setView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
-        <button onClick={() => setView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
+        <button onClick={() => switchView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
+        <button onClick={() => switchView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
+        <button onClick={() => switchView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
         <button onClick={handleLogout} className="mobile-nav-item"><LogOut size={24} /><span>Salir</span></button>
       </nav>
     </div>
@@ -281,10 +270,7 @@ const DashboardView = React.memo(({ data, user }) => {
   const { stats, byStatus, byCity } = data;
   return (
     <div className="dashboard-container fade-in">
-      <header className="page-header">
-        <h2 className="page-title">Hola, {user.split('@')[0]}</h2>
-        <p className="page-subtitle">Rendimiento en tiempo real.</p>
-      </header>
+      <header className="page-header"><h2 className="page-title">Hola, {user.split('@')[0]}</h2><p className="page-subtitle">Rendimiento en tiempo real.</p></header>
       <div className="stats-grid">
         <StatCard icon={<Database />} val={stats.total} label="Total" color="#6366f1" />
         <StatCard icon={<CheckCircle />} val={stats.closed} label="Cerrados" color="#10b981" />
@@ -293,28 +279,10 @@ const DashboardView = React.memo(({ data, user }) => {
       </div>
       <div className="charts-grid">
         <div className="chart-card glass-panel"><h3 className="chart-title">Distribución</h3>
-          <div style={{ height: '250px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={byStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {byStatus.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <div style={{ height: '250px' }}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={byStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{byStatus.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /></PieChart></ResponsiveContainer></div>
         </div>
         <div className="chart-card glass-panel"><h3 className="chart-title">Top Ciudades</h3>
-          <div style={{ height: '250px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={byCity} margin={{ bottom: 20 }}>
-                <XAxis dataKey="name" fontSize={10} stroke="#666" tick={{fill: '#666'}} />
-                <YAxis fontSize={10} stroke="#666" tick={{fill: '#666'}} />
-                <Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} />
-                <Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <div style={{ height: '250px' }}><ResponsiveContainer width="100%" height="100%"><BarChart data={byCity} margin={{ bottom: 20 }}><XAxis dataKey="name" fontSize={10} stroke="#666" tick={{fill: '#666'}} /><YAxis fontSize={10} stroke="#666" tick={{fill: '#666'}} /><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /><Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
         </div>
       </div>
     </div>
@@ -322,10 +290,7 @@ const DashboardView = React.memo(({ data, user }) => {
 });
 
 const StatCard = ({ icon, val, label, color }) => (
-  <div className="stat-card glass-panel">
-    <div className="stat-icon" style={{ background: `${color}15`, color: color }}>{icon}</div>
-    <div><div className="stat-value">{val}</div><div className="stat-label">{label}</div></div>
-  </div>
+  <div className="stat-card glass-panel"><div className="stat-icon" style={{ background: `${color}15`, color: color }}>{icon}</div><div><div className="stat-value">{val}</div><div className="stat-label">{label}</div></div></div>
 );
 
 function UploadView({ onSuccess }) {
@@ -333,7 +298,6 @@ function UploadView({ onSuccess }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
-
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
@@ -345,24 +309,9 @@ function UploadView({ onSuccess }) {
     } catch (e) { alert('Error'); }
     finally { setUploading(false); }
   };
-
   return (
     <div className="fade-in" style={{maxWidth:'600px', margin:'0 auto', paddingTop:'40px'}}>
-      <div className="glass-panel" style={{ padding: '40px', textAlign:'center' }}>
-        <h2 className="text-xl font-bold mb-6">Importar Leads</h2>
-        {!result ? (
-          <>
-            <div className="file-drop-zone" onClick={() => fileInput.current?.click()} style={{border:'2px dashed #333', padding:'40px', borderRadius:'16px'}}>
-              <input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" onChange={e => setFile(e.target.files?.[0])} />
-              <Upload size={48} className="text-muted" />
-              {file ? <p className="mt-4 font-bold">{file.name}</p> : <p className="mt-4 text-muted">Haz clic para subir Excel</p>}
-            </div>
-            <button className="btn btn-primary mt-6 w-full" disabled={!file || uploading} onClick={handleUpload}>{uploading ? 'Cargando...' : 'Iniciar Importación'}</button>
-          </>
-        ) : (
-          <div><CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/><h3>¡Completado!</h3><p className="text-muted mt-2">{result.imported} nuevos leads.</p><button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes</button></div>
-        )}
-      </div>
+      <div className="glass-panel" style={{ padding: '40px', textAlign:'center' }}><h2 className="text-xl font-bold mb-6">Importar Leads</h2>{!result ? (<><div className="file-drop-zone" onClick={() => fileInput.current?.click()} style={{border:'2px dashed #333', padding:'40px', borderRadius:'16px'}}><input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" onChange={e => setFile(e.target.files?.[0])} /><Upload size={48} className="text-muted" />{file ? <p className="mt-4 font-bold">{file.name}</p> : <p className="mt-4 text-muted">Haz clic para subir Excel</p>}</div><button className="btn btn-primary mt-6 w-full" disabled={!file || uploading} onClick={handleUpload}>{uploading ? 'Cargando...' : 'Iniciar Importación'}</button></>) : (<div><CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/><h3>¡Completado!</h3><p className="text-muted mt-2">{result.imported} nuevos leads.</p><button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes</button></div>)}</div>
     </div>
   );
 }
