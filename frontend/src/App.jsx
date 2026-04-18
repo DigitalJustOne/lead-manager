@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
 import { 
   Users, BarChart3, Upload, Search, Filter, 
-  ChevronRight, Phone, Globe, Star, MapPin, X, Save
+  ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut
 } from 'lucide-react';
 
 const API_URL = 'https://lead-manager-tnxt.onrender.com/api';
+const SUPABASE_URL = 'https://dmvrmgixqydznratglao.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdnJtZ2l4cXlkem5yYXRnbGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTI3NjIsImV4cCI6MjA5MjA4ODc2Mn0.JYybeKQyvMyRXK-fxbL8m5L-I6PbdAolF8XI-8ccwcw';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function App() {
+  const [session, setSession] = useState(null);
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -18,13 +24,46 @@ function App() {
   const [websiteFilter, setWebsiteFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
 
+  // Login states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   // Edit states
   const [editStatus, setEditStatus] = useState('');
   const [editNotes, setEditNotes] = useState('');
 
   useEffect(() => {
-    fetchLeads();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      fetchLeads();
+    }
+  }, [session]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoginError('');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setLoginError('Credenciales incorrectas. Verifica tu acceso.');
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
 
   const normalizeText = (text) => {
     if (!text) return '';
@@ -90,7 +129,6 @@ function App() {
         status: editStatus,
         notes: editNotes
       });
-      // Update local state optimistic
       const updated = leads.map(l => l.id === selectedLead.id ? {...l, status: editStatus, notes: editNotes} : l);
       setLeads(updated);
       setSelectedLead(null);
@@ -110,13 +148,58 @@ function App() {
     return 'status-pendiente';
   };
 
+  if (!session) {
+    return (
+      <div className="login-screen">
+        <div className="login-card glass-panel fade-in">
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div className="login-icon">
+              <Lock size={32} color="var(--accent-primary)" />
+            </div>
+            <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>Acceso CRM</h1>
+            <p className="text-muted text-sm mt-4">Ingresa tus credenciales para continuar</p>
+          </div>
+          
+          <form onSubmit={handleLogin} style={{ display: 'grid', gap: '20px' }}>
+            <div className="input-group">
+              <label>Correo Electrónico</label>
+              <input 
+                type="email" 
+                className="input-field" 
+                placeholder="tu@correo.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Contraseña</label>
+              <input 
+                type="password" 
+                className="input-field" 
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            {loginError && <p className="text-sm" style={{ color: 'var(--status-negacion)', textAlign: 'center' }}>{loginError}</p>}
+            <button className="btn btn-primary" type="submit" disabled={loading} style={{ height: '48px', marginTop: '10px' }}>
+              {loading ? 'Verificando...' : 'Entrar al Sistema'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Sidebar */}
       <aside className="sidebar glass-panel" style={{ borderRadius: 0, borderTop: 0, borderBottom: 0, borderLeft: 0 }}>
         <div style={{ padding: '0 0 20px 0', borderBottom: '1px solid var(--border-light)' }}>
           <h1 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Global CRM</h1>
-          <p className="text-muted text-sm mt-4">Local Lead Manager</p>
+          <p className="text-muted text-sm mt-4">{session.user.email}</p>
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -137,7 +220,7 @@ function App() {
         </nav>
 
         <div style={{ marginTop: 'auto' }}>
-          <div className="glass-panel" style={{ padding: '16px', border: '1px dashed var(--border-focus)' }}>
+          <div className="glass-panel mb-4" style={{ padding: '16px', border: '1px dashed var(--border-focus)' }}>
             <div className="flex-item-center text-muted mb-4">
               <BarChart3 size={16} /> <span className="text-sm font-semibold">Resumen Total</span>
             </div>
@@ -146,6 +229,9 @@ function App() {
             </div>
             <div className="text-sm text-muted">Leads Totales</div>
           </div>
+          <button className="btn btn-secondary w-full" style={{ gap: '10px' }} onClick={handleLogout}>
+            <LogOut size={16} /> Cerrar Sesión
+          </button>
         </div>
       </aside>
 
@@ -159,56 +245,43 @@ function App() {
                 <p className="text-muted text-sm" style={{ marginTop: '4px' }}>Gestiona y haz seguimiento a tus leads</p>
               </div>
               <div className="flex-item-center" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                <div className="input-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', width: '280px' }}>
+                <div className="input-field search-box">
                   <Search size={16} className="text-muted" />
                   <input 
                     type="text" 
-                    placeholder="Buscar nombre, nicho, ciudad..." 
+                    placeholder="Buscar leads..." 
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, outline: 'none', fontFamily: 'Inter, sans-serif' }}
                   />
                 </div>
                 <select 
-                  className="input-field" 
-                  style={{ padding: '10px 40px 10px 16px', width: '190px' }}
+                  className="input-field filter-select" 
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                 >
-                  <option value="">Ordenar por defecto</option>
-                  <option value="reviews_desc">⭐ Mejor valorados (Reseñas)</option>
-                  <option value="name_asc">🔤 Alfabéticamente (A-Z)</option>
-                  <option value="category_asc">🏢 Por Nicho / Categoría</option>
-                  <option value="city_asc">📍 Por Ubicación</option>
+                  <option value="">Ordenar por...</option>
+                  <option value="reviews_desc">⭐ Reseñas</option>
+                  <option value="name_asc">🔤 Nombre</option>
+                  <option value="category_asc">🏢 Nicho</option>
+                  <option value="city_asc">📍 Ciudad</option>
                 </select>
                 <select 
-                  className="input-field" 
-                  style={{ padding: '10px 40px 10px 16px', width: '190px' }}
+                  className="input-field filter-select" 
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <option value="">Todos los Estados</option>
+                  <option value="">Estado...</option>
                   <option value="Pendiente">⏳ Pendiente</option>
-                  <option value="Lead Potencial">⭐ Lead Potencial</option>
+                  <option value="Lead Potencial">⭐ Potencial</option>
                   <option value="No contesta">📵 No contesta</option>
-                  <option value="Negación Total">❌ Negación Total</option>
-                  <option value="Cliente Cerrado">✅ Cliente Cerrado</option>
-                </select>
-                <select 
-                  className="input-field" 
-                  style={{ padding: '10px 40px 10px 16px', width: '190px' }}
-                  value={websiteFilter}
-                  onChange={(e) => setWebsiteFilter(e.target.value)}
-                >
-                  <option value="">🌐 Todas las Webs</option>
-                  <option value="con">✅ Con página web</option>
-                  <option value="sin">🚫 Sin página web</option>
+                  <option value="Negación Total">❌ Negación</option>
+                  <option value="Cliente Cerrado">✅ Cerrado</option>
                 </select>
               </div>
             </header>
 
             <div className="content-scroll fade-in" style={{ paddingTop: '24px' }}>
-              {loading ? (
+              {loading && leads.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Cargando datos...</div>
               ) : (
                 <div className="data-grid-container">
@@ -237,7 +310,7 @@ function App() {
                           </td>
                           <td className="text-sm text-muted">{lead.category}</td>
                           <td className="text-sm text-muted">
-                            <div className="flex-item-center"><MapPin size={14}/> {lead.city || 'N/A'}, {lead.country || ''}</div>
+                            <div className="flex-item-center"><MapPin size={14}/> {lead.city || 'N/A'}</div>
                           </td>
                           <td className="text-sm">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -249,7 +322,7 @@ function App() {
                                   </a>
                                 </div>
                               )}
-                              {lead.website && <div className="flex-item-center" style={{ color: 'var(--accent-primary)' }}><Globe size={14}/> Website</div>}
+                              {lead.website && <div className="flex-item-center" style={{ color: 'var(--accent-primary)' }}><Globe size={14}/> Web</div>}
                             </div>
                           </td>
                           <td>
@@ -345,12 +418,11 @@ function App() {
                 <label>Notas del Vendedor</label>
                 <textarea 
                   className="input-field" 
-                  placeholder="Ej: Llamé a las 3pm, dijeron que les interesa pero que llame el Lunes..."
+                  placeholder="Ej: Llamé a las 3pm..."
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                 ></textarea>
               </div>
-
             </div>
             
             <div className="panel-footer glass-header">
@@ -364,7 +436,6 @@ function App() {
   );
 }
 
-// Extract UploadView Component
 function UploadView({ onSuccess }) {
   const fileInput = useRef(null);
   const [file, setFile] = useState(null);
@@ -394,19 +465,15 @@ function UploadView({ onSuccess }) {
       <header className="main-header glass-header">
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Importar Datos</h2>
-          <p className="text-muted text-sm" style={{ marginTop: '4px' }}>Sube archivos de Outscraper (Excel) para nutrir la base de datos.</p>
+          <p className="text-muted text-sm" style={{ marginTop: '4px' }}>Sube archivos de Outscraper (Excel).</p>
         </div>
       </header>
 
       <div className="content-scroll fade-in" style={{ paddingTop: '40px', maxWidth: '800px' }}>
         <div className="glass-panel" style={{ padding: '40px' }}>
-          
           {!result ? (
             <>
-              <div 
-                className="file-drop-zone" 
-                onClick={() => fileInput.current?.click()}
-              >
+              <div className="file-drop-zone" onClick={() => fileInput.current?.click()}>
                 <input 
                   type="file" 
                   ref={fileInput} 
@@ -416,45 +483,39 @@ function UploadView({ onSuccess }) {
                 />
                 <Upload size={48} className="text-muted" style={{ margin: '0 auto' }} />
                 {file ? (
-                  <p className="font-semibold text-primary" style={{ color: 'var(--text-primary)' }}>{file.name}</p>
+                  <p className="font-semibold" style={{ color: 'white' }}>{file.name}</p>
                 ) : (
                   <>
-                    <p className="font-semibold text-primary" style={{ color: 'var(--text-primary)' }}>Haz clic para seleccionar el archivo Excel (.xlsx)</p>
-                    <p className="text-sm">El sistema extraerá automáticamente clientes, limpiará duplicados y los preparará para seguimiento.</p>
+                    <p className="font-semibold" style={{ color: 'white' }}>Seleccionar Excel (.xlsx)</p>
+                    <p className="text-sm">Extrae clientes y limpia duplicados.</p>
                   </>
                 )}
               </div>
-
               <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button 
-                  className="btn btn-primary" 
-                  disabled={!file || uploading}
-                  onClick={handleUpload}
-                >
-                  {uploading ? 'Procesando archivo...' : 'Procesar y Agregar a DB'}
+                <button className="btn btn-primary" disabled={!file || uploading} onClick={handleUpload}>
+                  {uploading ? 'Procesando...' : 'Procesar y Agregar'}
                 </button>
               </div>
             </>
           ) : (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--status-closed)', marginBottom: '20px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', marginBottom: '20px' }}>
                 <Save size={32} />
               </div>
               <h3 className="text-lg font-semibold mb-4">Importación Completada</h3>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px' }}>
                 <div className="glass-panel" style={{ padding: '16px 24px' }}>
-                  <div className="text-sm text-muted">Añadidos Nuevos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.imported}</div>
+                  <div className="text-sm text-muted">Añadidos</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{result.imported}</div>
                 </div>
                 <div className="glass-panel" style={{ padding: '16px 24px' }}>
-                  <div className="text-sm text-muted">Duplicados Ignorados</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.duplicates}</div>
+                  <div className="text-sm text-muted">Duplicados</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{result.duplicates}</div>
                 </div>
               </div>
-              <button className="btn btn-primary" onClick={onSuccess}>Ir al Directorio de Clientes</button>
+              <button className="btn btn-primary" onClick={onSuccess}>Ir al Directorio</button>
             </div>
           )}
-
         </div>
       </div>
     </>
