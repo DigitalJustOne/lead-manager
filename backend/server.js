@@ -47,62 +47,78 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
     }
 
     let totalImported = 0;
+    let errors = [];
+    
     try {
         for (const file of req.files) {
-            const workbook = xlsx.readFile(file.path);
-            const sheetName = workbook.SheetNames[0];
-            const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            try {
+                const workbook = xlsx.readFile(file.path);
+                const sheetName = workbook.SheetNames[0];
+                const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-            const leadsToInsert = data.map(row => {
-                try {
-                    const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
-                    const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
-                    const website = parseField(row, ['website', 'url', 'sitio', 'web']);
-                    
-                    if (!name || (!phone && !website)) return null;
+                const leadsToInsert = data.map(row => {
+                    try {
+                        const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
+                        const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
+                        const website = parseField(row, ['website', 'url', 'sitio', 'web']);
+                        
+                        if (!name || (!phone && !website)) return null;
 
-                    const place_id = parseField(row, ['place_id', 'placeid', 'google_id', 'id']) || (phone + name);
-                    const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
-                    const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
-                    const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
-                    const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
-                    const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
+                        // Place ID seguro: si no hay uno externo, limpiamos nombre+tel para evitar caracteres prohibidos
+                        const rawId = parseField(row, ['place_id', 'placeid', 'google_id', 'id']);
+                        const place_id = rawId || (name + phone).replace(/[^a-zA-Z0-9]/g, '');
 
-                    return {
-                        place_id,
-                        name: name.substring(0, 250), // Evitar strings gigantes
-                        phone: phone ? phone.toString().substring(0, 50) : '',
-                        website: website ? website.toString().substring(0, 500) : '',
-                        category: category.substring(0, 100),
-                        city: city.substring(0, 100),
-                        address: address.substring(0, 500),
-                        rating: isNaN(rating) ? 0 : rating,
-                        reviews: isNaN(reviews) ? 0 : reviews,
-                        status: 'Pendiente'
-                    };
-                } catch (err) {
-                    return null;
+                        const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
+                        const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
+                        const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
+                        const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
+                        const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
+
+                        return {
+                            place_id,
+                            name: name.substring(0, 250),
+                            phone: phone ? phone.toString().substring(0, 50) : '',
+                            website: website ? website.toString().substring(0, 500) : '',
+                            category: category.substring(0, 100),
+                            city: city.substring(0, 100),
+                            address: address.substring(0, 500),
+                            rating: isNaN(rating) ? 0 : rating,
+                            reviews: isNaN(reviews) ? 0 : reviews,
+                            status: 'Pendiente'
+                        };
+                    } catch (err) {
+                        return null;
+                    }
+                }).filter(l => l !== null);
+
+                if (leadsToInsert.length > 0) {
+                    const { error } = await supabase
+                        .from('leads')
+                        .upsert(leadsToInsert, { onConflict: 'place_id' });
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        errors.push(`Error en BD con archivo ${file.originalname}: ${error.message}`);
+                    } else {
+                        totalImported += leadsToInsert.length;
+                    }
                 }
-            }).filter(l => l !== null);
-
-            if (leadsToInsert.length > 0) {
-                const { error } = await supabase
-                    .from('leads')
-                    .upsert(leadsToInsert, { onConflict: 'place_id' });
-                if (error) throw error;
-                totalImported += leadsToInsert.length;
+            } catch (fileErr) {
+                console.error('File process error:', fileErr);
+                errors.push(`No se pudo leer el archivo ${file.originalname}: ${fileErr.message}`);
+            } finally {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
             }
-            fs.unlinkSync(file.path);
         }
 
         res.json({
-            message: 'Upload complete',
-            total_processed: totalImported
+            message: errors.length > 0 ? 'Procesado con advertencias' : 'Completado con éxito',
+            total_processed: totalImported,
+            errors: errors
         });
 
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Failed to process files', details: e.message });
+        console.error('Global upload error:', e);
+        res.status(500).json({ error: 'Fallo crítico en el servidor', details: e.message });
     }
 });
 
