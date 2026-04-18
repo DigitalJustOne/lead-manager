@@ -51,7 +51,9 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
     try {
         for (const file of req.files) {
             try {
-                const workbook = xlsx.readFile(file.path);
+                // Leemos el archivo como buffer para controlar la codificación
+                const fileBuffer = fs.readFileSync(file.path);
+                const workbook = xlsx.read(fileBuffer, { type: 'buffer', codepage: 65001 });
                 const sheetName = workbook.SheetNames[0];
                 const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
