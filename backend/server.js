@@ -20,17 +20,22 @@ app.use(express.json());
 const upload = multer({ dest: 'uploads/' });
 
 // Helper para parsear campos
-// Herramienta para buscar columnas ignorando mayúsculas y acentos
 const parseField = (row, alternatives) => {
-    const keys = Object.keys(row);
-    for (const alt of alternatives) {
-        // Búsqueda exacta (insensible a mayúsculas)
-        const found = keys.find(k => k.toLowerCase().trim() === alt.toLowerCase());
-        if (found && row[found]) return row[found];
-        
-        // Búsqueda parcial (si la columna contiene la palabra)
-        const partial = keys.find(k => k.toLowerCase().includes(alt.toLowerCase()));
-        if (partial && row[partial]) return row[partial];
+    try {
+        const keys = Object.keys(row);
+        for (const alt of alternatives) {
+            const found = keys.find(k => k.toLowerCase().trim() === alt.toLowerCase());
+            if (found && row[found] !== undefined && row[found] !== null) {
+                return String(row[found]).trim();
+            }
+            
+            const partial = keys.find(k => k.toLowerCase().includes(alt.toLowerCase()));
+            if (partial && row[partial] !== undefined && row[partial] !== null) {
+                return String(row[partial]).trim();
+            }
+        }
+    } catch (e) {
+        return '';
     }
     return '';
 };
@@ -49,31 +54,35 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
             const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
             const leadsToInsert = data.map(row => {
-                // Mapeo ultra-flexible para cualquier exportación de Google Maps / Scrapers
-                const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
-                const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
-                const website = parseField(row, ['website', 'url', 'sitio', 'web']);
-                const place_id = parseField(row, ['place_id', 'placeid', 'google_id', 'id']) || (phone + name);
-                const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
-                const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
-                const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
-                const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
-                const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
-                
-                if (!name || (!phone && !website)) return null;
+                try {
+                    const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
+                    const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
+                    const website = parseField(row, ['website', 'url', 'sitio', 'web']);
+                    
+                    if (!name || (!phone && !website)) return null;
 
-                return {
-                    place_id,
-                    name,
-                    phone: phone.toString(),
-                    website,
-                    category,
-                    city,
-                    address,
-                    rating,
-                    reviews,
-                    status: 'Pendiente'
-                };
+                    const place_id = parseField(row, ['place_id', 'placeid', 'google_id', 'id']) || (phone + name);
+                    const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
+                    const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
+                    const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
+                    const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
+                    const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
+
+                    return {
+                        place_id,
+                        name: name.substring(0, 250), // Evitar strings gigantes
+                        phone: phone ? phone.toString().substring(0, 50) : '',
+                        website: website ? website.toString().substring(0, 500) : '',
+                        category: category.substring(0, 100),
+                        city: city.substring(0, 100),
+                        address: address.substring(0, 500),
+                        rating: isNaN(rating) ? 0 : rating,
+                        reviews: isNaN(reviews) ? 0 : reviews,
+                        status: 'Pendiente'
+                    };
+                } catch (err) {
+                    return null;
+                }
             }).filter(l => l !== null);
 
             if (leadsToInsert.length > 0) {
