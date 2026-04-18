@@ -140,14 +140,36 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 .status-lead { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
 
 /* Responsive adjustments */
+.mobile-nav { display: none; }
+
 @media (max-width: 900px) {
-  .premium-sidebar { width: 80px; padding: 24px 8px; }
-  .brand-name, .brand-tagline, .nav-label, .nav-link span, .user-details { display: none; }
-  .brand { justify-content: center; }
-  .nav-link { justify-content: center; padding: 12px; }
-  .user-info { justify-content: center; }
-  .btn-logout span { display: none; }
+  .premium-sidebar { display: none; }
+  
+  .main-content { padding: 16px; padding-bottom: 90px; }
+  
+  .mobile-nav {
+    display: flex; justify-content: space-around; align-items: center;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 70px; background: rgba(10, 10, 12, 0.95);
+    backdrop-filter: blur(10px); border-top: 1px solid var(--glass-border);
+    z-index: 1000; padding: 0 16px;
+  }
+  
+  .mobile-nav-item {
+    display: flex; flexDirection: column; align-items: center; gap: 4px;
+    background: transparent; border: none; color: var(--text-muted);
+    font-size: 0.65rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .mobile-nav-item.active { color: var(--accent-primary); }
+  .mobile-nav-item span { margin-top: 4px; }
+
   .charts-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { padding: 16px; gap: 12px; }
+  .stat-icon { width: 32px; height: 32px; }
+  .stat-icon svg { width: 16px; height: 16px; }
+  .stat-value { font-size: 1.1rem; }
+  .stat-label { font-size: 0.7rem; }
 }
 
 @media (max-width: 600px) {

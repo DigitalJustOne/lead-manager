@@ -382,6 +382,26 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Nav */}
+      <nav className="mobile-nav">
+        <button onClick={() => setView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}>
+          <LayoutDashboard size={24} />
+          <span>Inicio</span>
+        </button>
+        <button onClick={() => setView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}>
+          <Users size={24} />
+          <span>Clientes</span>
+        </button>
+        <button onClick={() => setView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}>
+          <Upload size={24} />
+          <span>Subir</span>
+        </button>
+        <button onClick={handleLogout} className="mobile-nav-item">
+          <LogOut size={24} />
+          <span>Salir</span>
+        </button>
+      </nav>
     </div>
   );
 }
