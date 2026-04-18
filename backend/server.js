@@ -20,9 +20,17 @@ app.use(express.json());
 const upload = multer({ dest: 'uploads/' });
 
 // Helper para parsear campos
-const parseField = (row, fields) => {
-    for (let f of fields) {
-        if (row[f] !== undefined && row[f] !== null) return String(row[f]).trim();
+// Herramienta para buscar columnas ignorando mayúsculas y acentos
+const parseField = (row, alternatives) => {
+    const keys = Object.keys(row);
+    for (const alt of alternatives) {
+        // Búsqueda exacta (insensible a mayúsculas)
+        const found = keys.find(k => k.toLowerCase().trim() === alt.toLowerCase());
+        if (found && row[found]) return row[found];
+        
+        // Búsqueda parcial (si la columna contiene la palabra)
+        const partial = keys.find(k => k.toLowerCase().includes(alt.toLowerCase()));
+        if (partial && row[partial]) return row[partial];
     }
     return '';
 };
@@ -41,22 +49,29 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
             const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
             const leadsToInsert = data.map(row => {
-                const place_id = parseField(row, ['place_id', 'google_id', 'website', 'phone']);
-                const name = parseField(row, ['name']);
-                const phone = parseField(row, ['phone']);
+                // Mapeo ultra-flexible para cualquier exportación de Google Maps / Scrapers
+                const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
+                const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
+                const website = parseField(row, ['website', 'url', 'sitio', 'web']);
+                const place_id = parseField(row, ['place_id', 'placeid', 'google_id', 'id']) || (phone + name);
+                const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
+                const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
+                const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
+                const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
+                const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
                 
-                if (!place_id && !phone && !name) return null;
+                if (!name || (!phone && !website)) return null;
 
                 return {
-                    place_id: place_id || (phone + name),
-                    category: parseField(row, ['category', 'subtypes', 'type']),
-                    name: name,
-                    phone: phone,
-                    website: parseField(row, ['website']),
-                    city: parseField(row, ['city']),
-                    country: parseField(row, ['country']),
-                    rating: parseFloat(row['rating']) || 0,
-                    reviews: parseInt(row['reviews']) || 0,
+                    place_id,
+                    name,
+                    phone: phone.toString(),
+                    website,
+                    category,
+                    city,
+                    address,
+                    rating,
+                    reviews,
                     status: 'Pendiente'
                 };
             }).filter(l => l !== null);
