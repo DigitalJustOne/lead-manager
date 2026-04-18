@@ -5,7 +5,7 @@ import {
   ChevronRight, Phone, Globe, Star, MapPin, X, Save
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://lead-manager-tnxt.onrender.com/api';
 
 function App() {
   const [leads, setLeads] = useState([]);
