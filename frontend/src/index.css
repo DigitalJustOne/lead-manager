@@ -383,84 +383,67 @@ textarea.input-field {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive Design for Mobile */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
+/* Logout and UI Buttons */
+.btn-logout {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  justify-content: center;
+  margin-top: 12px;
+}
 
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ff5f5f;
+}
+
+@media (max-width: 768px) {
   .sidebar {
     width: 100%;
-    padding: 16px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    border-right: none;
-    border-bottom: 1px solid var(--border-light);
-    gap: 16px;
+    position: fixed;
+    bottom: 0;
+    top: auto;
     height: auto;
-  }
-
-  .sidebar > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .sidebar nav {
-    display: flex;
+    z-index: 100;
+    padding: 8px 16px;
     flex-direction: row;
-    gap: 8px;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid var(--border-light);
+    border-bottom: none;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(20px);
   }
 
-  .sidebar nav button {
-    padding: 8px 12px;
-    font-size: 0.8rem;
-  }
+  .sidebar h1, .sidebar p, .stats-card, .sidebar > div:first-child p { display: none !important; }
+  .sidebar nav { flex-direction: row; width: auto; gap: 8px; }
+  .sidebar .btn { padding: 10px; min-width: 44px; display: flex; align-items: center; justify-content: center !important; }
+  .sidebar .btn span, .sidebar .btn label { display: none; }
+  
+  .sidebar-footer { margin-top: 0 !important; display: flex; align-items: center; }
+  .btn-logout { margin-top: 0; padding: 10px !important; width: 44px !important; }
+  .btn-logout span { display: none; }
 
-  .sidebar .glass-panel {
-    display: none; /* Hide stats on mobile for space */
-  }
-
+  .main-content { margin-left: 0; padding-bottom: 80px; }
+  
   .main-header {
     flex-direction: column;
     padding: 16px;
-    gap: 16px;
-    align-items: flex-start;
+    gap: 12px;
+    height: auto;
   }
 
   .main-header .flex-item-center {
+    flex-wrap: wrap;
+    gap: 8px;
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
   }
 
-  .main-header .input-field {
-    width: 100% !important;
-  }
+  .search-box { width: 100% !important; }
+  .filter-select { flex: 1; min-width: 100px; font-size: 11px; padding: 8px !important; }
 
-  .content-scroll {
-    padding: 0 16px 16px;
-  }
-
-  .side-panel {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--border-light);
-    border-radius: 16px 16px 0 0;
-    height: 90vh;
-    margin-top: 10vh;
-    animation: slideUp 0.3s ease-out forwards;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  /* Make table rows more condensed on mobile */
-  .data-grid td, .data-grid th {
-    padding: 12px;
-    white-space: nowrap;
+  .data-grid th:nth-child(2), .data-grid td:nth-child(2),
+  .data-grid th:nth-child(3), .data-grid td:nth-child(3) { 
+    display: none; 
   }
 }

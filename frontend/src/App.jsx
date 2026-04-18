@@ -219,18 +219,17 @@ function App() {
           </button>
         </nav>
 
-        <div style={{ marginTop: 'auto' }}>
-          <div className="glass-panel mb-4" style={{ padding: '16px', border: '1px dashed var(--border-focus)' }}>
+        <div className="sidebar-footer" style={{ marginTop: 'auto' }}>
+          <div className="stats-card glass-panel mb-4" style={{ padding: '16px', border: '1px dashed var(--border-focus)' }}>
             <div className="flex-item-center text-muted mb-4">
-              <BarChart3 size={16} /> <span className="text-sm font-semibold">Resumen Total</span>
+              <BarChart3 size={16} /> <span className="text-sm font-semibold">Total</span>
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               {leads.length}
             </div>
-            <div className="text-sm text-muted">Leads Totales</div>
           </div>
-          <button className="btn btn-secondary w-full" style={{ gap: '10px' }} onClick={handleLogout}>
-            <LogOut size={16} /> Cerrar Sesión
+          <button className="btn btn-logout w-full" onClick={handleLogout}>
+            <LogOut size={16} /> <span>Salir</span>
           </button>
         </div>
       </aside>
@@ -260,10 +259,10 @@ function App() {
                   onChange={(e) => setSortBy(e.target.value)}
                 >
                   <option value="">Ordenar por...</option>
-                  <option value="reviews_desc">⭐ Reseñas</option>
-                  <option value="name_asc">🔤 Nombre</option>
-                  <option value="category_asc">🏢 Nicho</option>
-                  <option value="city_asc">📍 Ciudad</option>
+                  <option value="reviews_desc">⭐ Más Reseñas</option>
+                  <option value="name_asc">🔤 Nombre (A-Z)</option>
+                  <option value="category_asc">🏢 Por Nicho</option>
+                  <option value="city_asc">📍 Por Ciudad</option>
                 </select>
                 <select 
                   className="input-field filter-select" 
@@ -276,6 +275,15 @@ function App() {
                   <option value="No contesta">📵 No contesta</option>
                   <option value="Negación Total">❌ Negación</option>
                   <option value="Cliente Cerrado">✅ Cerrado</option>
+                </select>
+                <select 
+                  className="input-field filter-select" 
+                  value={websiteFilter}
+                  onChange={(e) => setWebsiteFilter(e.target.value)}
+                >
+                  <option value="">🌐 Página Web...</option>
+                  <option value="con">✅ Con Website</option>
+                  <option value="sin">🚫 Sin Website</option>
                 </select>
               </div>
             </header>
