@@ -187,6 +187,7 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
     z-index: 2500;
   }
   .panel-content { padding-bottom: 180px; } /* Space for the floating footer */
+}
 
 @media (max-width: 600px) {
   .main-content { padding: 16px; }
