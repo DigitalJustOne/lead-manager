@@ -19,23 +19,22 @@ app.use(express.json());
 
 const upload = multer({ dest: 'uploads/' });
 
-// Helper para parsear campos
-const parseField = (row, alternatives) => {
-    try {
-        const keys = Object.keys(row);
-        for (const alt of alternatives) {
-            const found = keys.find(k => k.toLowerCase().trim() === alt.toLowerCase());
-            if (found && row[found] !== undefined && row[found] !== null) {
-                return String(row[found]).trim();
-            }
-            
-            const partial = keys.find(k => k.toLowerCase().includes(alt.toLowerCase()));
-            if (partial && row[partial] !== undefined && row[partial] !== null) {
-                return String(row[partial]).trim();
-            }
+const parseField = (row, keys) => {
+    const rowKeys = Object.keys(row);
+    for (const key of keys) {
+        // Buscamos la columna de forma exacta primero
+        if (row[key] !== undefined && row[key] !== null) return String(row[key]).trim();
+
+        // Si no, buscamos quitando espacios y mayúsculas
+        const normalizedTarget = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const foundKey = rowKeys.find(rk => {
+            const normalizedRowKey = rk.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return normalizedRowKey === normalizedTarget;
+        });
+
+        if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
+            return String(row[foundKey]).trim();
         }
-    } catch (e) {
-        return '';
     }
     return '';
 };
@@ -58,21 +57,23 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
 
                 const leadsToInsert = data.map(row => {
                     try {
-                        const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme']);
-                        const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto']);
-                        const website = parseField(row, ['website', 'url', 'sitio', 'web']);
+                        // Mapeo mucho más agresivo y flexible
+                        const name = parseField(row, ['name', 'title', 'nombre', 'negocio', 'pyme', 'fullname']);
+                        const phone = parseField(row, ['phone', 'tel', 'celular', 'phone_number', 'phoneNumber', 'contacto', 'phones']);
+                        const website = parseField(row, ['website', 'url', 'sitio', 'web', 'domain']);
                         
-                        if (!name || (!phone && !website)) return null;
+                        // Si es una fila de publicidad del scraper o no tiene nombre, ignorar
+                        if (!name || name.toLowerCase().includes('scraper exports') || (!phone && !website)) return null;
 
-                        // Place ID seguro: si no hay uno externo, limpiamos nombre+tel para evitar caracteres prohibidos
-                        const rawId = parseField(row, ['place_id', 'placeid', 'google_id', 'id']);
+                        const rawId = parseField(row, ['place_id', 'placeid', 'google_id', 'id', 'cid']);
+                        // Generamos un ID basado en el nombre si no hay uno real
                         const place_id = rawId || (name + phone).replace(/[^a-zA-Z0-9]/g, '');
 
-                        const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro']);
-                        const city = parseField(row, ['city', 'ciudad', 'location', 'municipio']);
-                        const address = parseField(row, ['address', 'fullAddress', 'direccion', 'ubicacion']);
-                        const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas'])) || 0;
-                        const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas'])) || 0;
+                        const category = parseField(row, ['category', 'categoryName', 'subtypes', 'type', 'nicho', 'rubro', 'categories']);
+                        const city = parseField(row, ['city', 'ciudad', 'location', 'municipio', 'town']);
+                        const address = parseField(row, ['address', 'fulladdress', 'direccion', 'ubicacion', 'street']);
+                        const rating = parseFloat(parseField(row, ['rating', 'score', 'puntuacion', 'estrellas', 'averagerating'])) || 0;
+                        const reviews = parseInt(parseField(row, ['reviews', 'reviewsCount', 'reseñas', 'reviewcount'])) || 0;
 
                         return {
                             place_id,

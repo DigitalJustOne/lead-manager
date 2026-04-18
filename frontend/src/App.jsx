@@ -418,9 +418,26 @@ function UploadView({ onSuccess }) {
           </>
         ) : (
           <div>
-            <CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/>
-            <h3>¡Importación Exitosa!</h3>
-            <p className="text-muted mt-2">Se han procesado **{result.total_processed}** leads correctamente.</p>
+            {result.errors && result.errors.length > 0 ? (
+              <AlertTriangle size={64} color="#f59e0b" style={{margin:'0 auto 16px'}}/>
+            ) : (
+              <CheckCircle size={64} color="#10b981" style={{margin:'0 auto 16px'}}/>
+            )}
+            
+            <h3>{result.errors && result.errors.length > 0 ? 'Procesado con Advertencias' : '¡Importación Exitosa!'}</h3>
+            <p className="text-muted mt-2">
+              Se han procesado **{result.total_processed}** leads correctamente.
+            </p>
+
+            {result.errors && result.errors.length > 0 && (
+              <div className="glass-panel mt-4" style={{textAlign:'left', padding:'15px', background:'rgba(245,158,11,0.05)', borderColor:'rgba(245,158,11,0.2)'}}>
+                <p className="text-xs font-bold" style={{color:'#f59e0b', marginBottom:'8px'}}>Problemas encontrados:</p>
+                <ul style={{fontSize:'12px', color:'var(--text-muted)', paddingLeft:'15px'}}>
+                  {result.errors.map((err, i) => <li key={i}>{err}</li>)}
+                </ul>
+              </div>
+            )}
+
             <button className="btn btn-primary mt-6 w-full" onClick={onSuccess}>Ver Clientes Actualizados</button>
           </div>
         )}
