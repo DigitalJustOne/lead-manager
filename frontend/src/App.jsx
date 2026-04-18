@@ -53,9 +53,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [websiteFilter, setWebsiteFilter] = useState('');
-  const [sortBy, setSortBy] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterWebsite, setFilterWebsite] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
   const [visibleCount, setVisibleCount] = useState(50);
 
   const [email, setEmail] = useState('');
@@ -113,15 +113,18 @@ function App() {
       const q = normalize(debouncedSearch);
       result = result.filter(l => normalize(l.name).includes(q) || normalize(l.category).includes(q) || normalize(l.city).includes(q) || normalize(l.phone).includes(q));
     }
-    if (statusFilter) result = result.filter(l => l.status === statusFilter);
-    if (websiteFilter === 'con') result = result.filter(l => l.website?.trim());
-    else if (websiteFilter === 'sin') result = result.filter(l => !l.website?.trim());
     
-    if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
-    else if (sortBy === 'reviews_asc') result.sort((a, b) => (a.reviews || 0) - (b.reviews || 0));
-    else if (sortBy === 'name_asc') result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    result = result.filter(lead => {
+      if (filterStatus !== 'All' && lead.status !== filterStatus) return false;
+      if (filterWebsite === 'yes' && !lead.website) return false;
+      if (filterWebsite === 'no' && lead.website) return false;
+      return true;
+    });
+    
+    if (sortBy === 'reviews') result.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+    else if (sortBy === 'rating') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     return result;
-  }, [debouncedSearch, statusFilter, websiteFilter, sortBy, leads]);
+  }, [debouncedSearch, filterStatus, filterWebsite, sortBy, leads]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
 
@@ -129,7 +132,7 @@ function App() {
     startTransition(() => {
       setView(newView);
       if (newView === 'list') setVisibleCount(50);
-      if (newView === 'dashboard') fetchLeads(); // Recargar al volver al panel
+      if (newView === 'dashboard') fetchLeads();
     });
   };
 
@@ -150,8 +153,6 @@ function App() {
 
   const statsData = useMemo(() => {
     const normalizeStr = (s) => (s || '').toLowerCase();
-    
-    // Fuzzy matching for stats
     const isClosed = (s) => {
       const n = normalizeStr(s);
       return n.includes('cerrado') || n.includes('cliente') || n.includes('ganado') || n.includes('venta');
@@ -182,7 +183,7 @@ function App() {
       { name: 'Potenciales', value: stats.potential },
       { name: 'Pendientes', value: stats.pending },
       { name: 'Otros', value: Math.max(0, otherLeadsCount) }
-    ].filter(i => i.value > 0); // Solo mostrar si hay datos
+    ].filter(i => i.value > 0);
 
     const cityMap = leads.reduce((acc, l) => { acc[l.city || 'Otros'] = (acc[l.city || 'Otros'] || 0) + 1; return acc; }, {});
     const byCity = Object.keys(cityMap).map(k => ({ name: k, leads: cityMap[k] })).sort((a,b) => b.leads - a.leads).slice(0, 5);
@@ -235,17 +236,45 @@ function App() {
           <div className="fade-in">
             <header className="main-header glass-header">
               <div><h2>Directorio Maestro</h2><p className="text-muted text-sm">{filteredLeads.length} Registros</p></div>
-              <div className="flex-item-center" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                <div className="input-field search-box"><Search size={16} className="text-muted" /><input type="text" placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-                <select className="input-field filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="">Ordenar por...</option>
-                  <option value="reviews_desc">🔥 Más Reseñas</option>
-                  <option value="reviews_asc">❄️ Menos Reseñas</option>
-                  <option value="name_asc">🔤 Nombre (A-Z)</option>
-                </select>
-                <select className="input-field filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="">Estado...</option><option value="Cliente Cerrado">✅ Cerrado</option><option value="Lead Potencial">⭐ Potencial</option><option value="Pendiente">⏳ Pendiente</option>
-                </select>
+              <div className="filters-container">
+                <div className="search-box">
+                  <Search size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por nombre, nicho o ciudad..." 
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                </div>
+                <div className="filters-grid">
+                  <div className="select-wrapper">
+                    <Filter size={14} />
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                      <option value="newest">Más recientes</option>
+                      <option value="rating">Mejor Rating</option>
+                      <option value="reviews">Más Reseñas</option>
+                    </select>
+                  </div>
+
+                  <div className="select-wrapper">
+                    <Target size={14} />
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                      <option value="All">Todos los Estados</option>
+                      <option value="Pendiente">⏳ Pendiente</option>
+                      <option value="Lead Potencial">⭐ VIP/Potencial</option>
+                      <option value="Cliente Cerrado">✅ Cerrado</option>
+                    </select>
+                  </div>
+
+                  <div className="select-wrapper">
+                    <Globe size={14} />
+                    <select value={filterWebsite} onChange={e => setFilterWebsite(e.target.value)}>
+                      <option value="All">Cualquier Web</option>
+                      <option value="yes">🌍 Con Sitio Web</option>
+                      <option value="no">🚫 Sin Sitio Web</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </header>
             <div className="data-grid-container content-scroll mt-6">

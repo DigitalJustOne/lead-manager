@@ -211,3 +211,99 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-dark); }
 .login-card { width: 400px; padding: 48px; }
 .text-gradient { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Filters & Search UI */
+.filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .filters-container {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: var(--text-muted);
+  transition: all 0.3s;
+  flex: 1;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.filters-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 0 12px;
+  color: var(--text-muted);
+  transition: all 0.3s;
+  min-width: 160px;
+}
+
+.select-wrapper:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.select-wrapper select {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 10px 18px 10px 4px;
+  width: 100%;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.select-wrapper::after {
+  content: '▾';
+  font-size: 0.8rem;
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.select-wrapper select option {
+  background: #1a1a1f;
+  color: white;
+  padding: 12px;
+}
