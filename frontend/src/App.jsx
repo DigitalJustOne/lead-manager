@@ -3,8 +3,12 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { 
   Users, BarChart3, Upload, Search, Filter, 
-  ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut
+  ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut,
+  TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database
 } from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
+} from 'recharts';
 
 const API_URL = 'https://lead-manager-tnxt.onrender.com/api';
 const SUPABASE_URL = 'https://dmvrmgixqydznratglao.supabase.co';
@@ -12,51 +16,41 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
 function App() {
   const [session, setSession] = useState(null);
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [selectedLead, setSelectedLead] = useState(null);
-  const [view, setView] = useState('list'); // list | upload
+  const [view, setView] = useState('dashboard'); // dashboard | list | upload
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [websiteFilter, setWebsiteFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
 
-  // Login states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-
-  // Edit states
   const [editStatus, setEditStatus] = useState('');
   const [editNotes, setEditNotes] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (session) {
-      fetchLeads();
-    }
+    if (session) fetchLeads();
   }, [session]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setLoginError('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setLoginError('Credenciales incorrectas. Verifica tu acceso.');
+    if (error) setLoginError('Acceso denegado');
     setLoading(false);
   };
 
@@ -81,24 +75,14 @@ function App() {
         normalizeText(l.phone).includes(q)
       );
     }
-    if (statusFilter) {
-      result = result.filter(l => l.status === statusFilter);
-    }
-    if (websiteFilter === 'con') {
-      result = result.filter(l => l.website && l.website.trim() !== '');
-    } else if (websiteFilter === 'sin') {
-      result = result.filter(l => !l.website || l.website.trim() === '');
-    }
+    if (statusFilter) result = result.filter(l => l.status === statusFilter);
+    if (websiteFilter === 'con') result = result.filter(l => l.website && l.website.trim() !== '');
+    else if (websiteFilter === 'sin') result = result.filter(l => !l.website || l.website.trim() === '');
 
-    if (sortBy === 'reviews_desc') {
-      result.sort((a, b) => (b.reviews || 0) * (b.rating || 0) - (a.reviews || 0) * (a.rating || 0));
-    } else if (sortBy === 'name_asc') {
-      result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    } else if (sortBy === 'category_asc') {
-      result.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
-    } else if (sortBy === 'city_asc') {
-      result.sort((a, b) => (a.city || '').localeCompare(b.city || ''));
-    }
+    if (sortBy === 'reviews_desc') result.sort((a, b) => (b.reviews || 0) * (b.rating || 0) - (a.reviews || 0) * (a.rating || 0));
+    else if (sortBy === 'name_asc') result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    else if (sortBy === 'category_asc') result.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+    else if (sortBy === 'city_asc') result.sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
     setFilteredLeads(result);
   }, [search, statusFilter, websiteFilter, sortBy, leads]);
@@ -116,77 +100,77 @@ function App() {
     }
   };
 
-  const openPanel = (lead) => {
-    setSelectedLead(lead);
-    setEditStatus(lead.status);
-    setEditNotes(lead.notes || '');
-  };
-
   const saveLead = async () => {
     if (!selectedLead) return;
     try {
-      await axios.put(`${API_URL}/leads/${selectedLead.id}`, {
-        status: editStatus,
-        notes: editNotes
-      });
+      await axios.put(`${API_URL}/leads/${selectedLead.id}`, { status: editStatus, notes: editNotes });
       const updated = leads.map(l => l.id === selectedLead.id ? {...l, status: editStatus, notes: editNotes} : l);
       setLeads(updated);
       setSelectedLead(null);
-    } catch (e) {
-      alert('Error updating lead');
-    }
+    } catch (e) { alert('Error'); }
   };
 
   const getStatusClass = (status) => {
     if (!status) return 'status-pendiente';
     const s = status.toLowerCase();
     if (s.includes('pendiente')) return 'status-pendiente';
-    if (s.includes('sabe') || s.includes('contesta')) return 'status-nocontesta';
-    if (s.includes('negació') || s.includes('negacio')) return 'status-negacion';
+    if (s.includes('sabe') || s.includes('notesta')) return 'status-nocontesta';
+    if (s.includes('negación') || s.includes('negacio')) return 'status-negacion';
     if (s.includes('potencial') || s.includes('lead')) return 'status-lead';
     if (s.includes('cliente') || s.includes('cerrado')) return 'status-cliente';
     return 'status-pendiente';
   };
+
+  // Stats Data
+  const getStats = () => {
+    const stats = {
+      total: leads.length,
+      closed: leads.filter(l => l.status === 'Cliente Cerrado').length,
+      potential: leads.filter(l => l.status === 'Lead Potencial').length,
+      pending: leads.filter(l => !l.status || l.status === 'Pendiente').length
+    };
+    
+    const byStatus = [
+      { name: 'Cerrados', value: stats.closed },
+      { name: 'Potenciales', value: stats.potential },
+      { name: 'Pendientes', value: stats.pending },
+      { name: 'Otros', value: leads.length - (stats.closed+stats.potential+stats.pending) }
+    ];
+
+    const cityStats = leads.reduce((acc, lead) => {
+      const city = lead.city || 'Desconocida';
+      acc[city] = (acc[city] || 0) + 1;
+      return acc;
+    }, {});
+
+    const byCity = Object.keys(cityStats).map(city => ({ name: city, leads: cityStats[city] }))
+      .sort((a,b) => b.leads - a.leads).slice(0, 5);
+
+    return { stats, byStatus, byCity };
+  };
+
+  const { stats, byStatus, byCity } = getStats();
 
   if (!session) {
     return (
       <div className="login-screen">
         <div className="login-card glass-panel fade-in">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div className="login-icon">
-              <Lock size={32} color="var(--accent-primary)" />
-            </div>
-            <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>Acceso CRM</h1>
-            <p className="text-muted text-sm mt-4">Ingresa tus credenciales para continuar</p>
+            <div className="login-icon"><Lock size={32} color="var(--accent-primary)" /></div>
+            <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>Global CRM</h1>
+            <p className="text-muted text-sm mt-4">Premium Lead Management</p>
           </div>
-          
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '20px' }}>
             <div className="input-group">
-              <label>Correo Electrónico</label>
-              <input 
-                type="email" 
-                className="input-field" 
-                placeholder="tu@correo.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+              <label>Usuario</label>
+              <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div className="input-group">
               <label>Contraseña</label>
-              <input 
-                type="password" 
-                className="input-field" 
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
+              <input type="password" className="input-field" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-            {loginError && <p className="text-sm" style={{ color: 'var(--status-negacion)', textAlign: 'center' }}>{loginError}</p>}
-            <button className="btn btn-primary" type="submit" disabled={loading} style={{ height: '48px', marginTop: '10px' }}>
-              {loading ? 'Verificando...' : 'Entrar al Sistema'}
-            </button>
+            {loginError && <p style={{ color: 'var(--status-negacion)', textAlign: 'center' }}>{loginError}</p>}
+            <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Iniciando...' : 'Acceder'}</button>
           </form>
         </div>
       </div>
@@ -195,37 +179,41 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Sidebar */}
-      <aside className="sidebar glass-panel" style={{ borderRadius: 0, borderTop: 0, borderBottom: 0, borderLeft: 0 }}>
-        <div style={{ padding: '0 0 20px 0', borderBottom: '1px solid var(--border-light)' }}>
-          <h1 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Global CRM</h1>
-          <p className="text-muted text-sm mt-4">{session.user.email}</p>
+      <aside className="sidebar premium-sidebar">
+        <div className="sidebar-header">
+          <div className="brand">
+            <div className="brand-logo"><TrendingUp size={20} /></div>
+            <div>
+              <h1 className="brand-name">Global CRM</h1>
+              <p className="brand-tagline">Enterprise Edition</p>
+            </div>
+          </div>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button 
-            onClick={() => setView('list')}
-            className={`btn ${view === 'list' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ justifyContent: 'flex-start' }}
-          >
-            <Users size={18} /> Directorio de Clientes
-          </button>
-          <button 
-            onClick={() => setView('upload')}
-            className={`btn ${view === 'upload' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ justifyContent: 'flex-start' }}
-          >
-            <Upload size={18} /> Importar Datos
-          </button>
+        <nav className="sidebar-nav">
+          <div className="nav-group">
+            <span className="nav-label">General</span>
+            <button onClick={() => setView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}>
+              <LayoutDashboard size={18} /> <span>Panel de Control</span>
+            </button>
+            <button onClick={() => setView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}>
+              <Users size={18} /> <span>Mis Clientes</span>
+            </button>
+          </div>
+          <div className="nav-group">
+            <span className="nav-label">Herramientas</span>
+            <button onClick={() => setView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}>
+              <Upload size={18} /> <span>Importar Excel</span>
+            </button>
+          </div>
         </nav>
 
-        <div className="sidebar-footer" style={{ marginTop: 'auto' }}>
-          <div className="stats-card glass-panel mb-4" style={{ padding: '16px', border: '1px dashed var(--border-focus)' }}>
-            <div className="flex-item-center text-muted mb-4">
-              <BarChart3 size={16} /> <span className="text-sm font-semibold">Total</span>
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {leads.length}
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <div className="user-avatar">{session.user.email[0].toUpperCase()}</div>
+            <div className="user-details">
+              <span className="user-email">{session.user.email.split('@')[0]}</span>
+              <span className="user-role">Administrator</span>
             </div>
           </div>
           <button className="btn btn-logout w-full" onClick={handleLogout}>
@@ -234,209 +222,162 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
+        {view === 'dashboard' && (
+          <div className="dashboard-container fade-in">
+            <header className="page-header">
+              <h2 className="page-title">Bienvenido, {session.user.email.split('@')[0]}</h2>
+              <p className="page-subtitle">Aquí tienes el resumen de tu rendimiento hoy.</p>
+            </header>
+
+            <div className="stats-grid">
+              <div className="stat-card glass-panel">
+                <div className="stat-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1' }}><Database size={24} /></div>
+                <div><div className="stat-value">{stats.total}</div><div className="stat-label">Leads Totales</div></div>
+              </div>
+              <div className="stat-card glass-panel">
+                <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}><CheckCircle size={24} /></div>
+                <div><div className="stat-value">{stats.closed}</div><div className="stat-label">Ventas Cerradas</div></div>
+              </div>
+              <div className="stat-card glass-panel">
+                <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}><Target size={24} /></div>
+                <div><div className="stat-value">{stats.potential}</div><div className="stat-label">Leads VIP</div></div>
+              </div>
+              <div className="stat-card glass-panel">
+                <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><Clock size={24} /></div>
+                <div><div className="stat-value">{stats.pending}</div><div className="stat-label">Por Llamar</div></div>
+              </div>
+            </div>
+
+            <div className="charts-grid">
+              <div className="chart-card glass-panel">
+                <h3 className="chart-title">Distribución por Estado</h3>
+                <div style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={byStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                        {byStatus.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="chart-card glass-panel">
+                <h3 className="chart-title">Top Ciudades</h3>
+                <div style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={byCity}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                      <XAxis dataKey="name" stroke="#666" fontSize={12} />
+                      <YAxis stroke="#666" fontSize={12} />
+                      <Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} />
+                      <Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {view === 'list' && (
-          <>
+          <div className="fade-in">
             <header className="main-header glass-header">
               <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Directorio de Clientes</h2>
-                <p className="text-muted text-sm" style={{ marginTop: '4px' }}>Gestiona y haz seguimiento a tus leads</p>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Directorio Maestro</h2>
+                <p className="text-muted text-sm">Gestiona tus prospectos</p>
               </div>
               <div className="flex-item-center" style={{ gap: '12px', flexWrap: 'wrap' }}>
                 <div className="input-field search-box">
                   <Search size={16} className="text-muted" />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar leads..." 
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+                  <input type="text" placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
-                <select 
-                  className="input-field filter-select" 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  <option value="">Ordenar por...</option>
-                  <option value="reviews_desc">⭐ Más Reseñas</option>
-                  <option value="name_asc">🔤 Nombre (A-Z)</option>
-                  <option value="category_asc">🏢 Por Nicho</option>
-                  <option value="city_asc">📍 Por Ciudad</option>
+                <select className="input-field filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="">Ordenar...</option>
+                  <option value="reviews_desc">⭐ Reseñas</option>
+                  <option value="name_asc">🔤 Nombre</option>
                 </select>
-                <select 
-                  className="input-field filter-select" 
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
+                <select className="input-field filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">Estado...</option>
-                  <option value="Pendiente">⏳ Pendiente</option>
-                  <option value="Lead Potencial">⭐ Potencial</option>
-                  <option value="No contesta">📵 No contesta</option>
-                  <option value="Negación Total">❌ Negación</option>
                   <option value="Cliente Cerrado">✅ Cerrado</option>
+                  <option value="Lead Potencial">⭐ Potencial</option>
+                  <option value="Pendiente">⏳ Pendiente</option>
                 </select>
-                <select 
-                  className="input-field filter-select" 
-                  value={websiteFilter}
-                  onChange={(e) => setWebsiteFilter(e.target.value)}
-                >
-                  <option value="">🌐 Página Web...</option>
-                  <option value="con">✅ Tiene Página Web</option>
-                  <option value="sin">🚫 No tiene Página Web</option>
+                <select className="input-field filter-select" value={websiteFilter} onChange={(e) => setWebsiteFilter(e.target.value)}>
+                  <option value="">Web...</option>
+                  <option value="con">✅ Tiene Web</option>
+                  <option value="sin">🚫 Sin Web</option>
                 </select>
               </div>
             </header>
 
-            <div className="content-scroll fade-in" style={{ paddingTop: '24px' }}>
-              {loading && leads.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Cargando datos...</div>
-              ) : (
-                <div className="data-grid-container">
-                  <table className="data-grid">
-                    <thead>
-                      <tr>
-                        <th>Negocio</th>
-                        <th>Nicho</th>
-                        <th>Ubicación</th>
-                        <th>Contacto</th>
-                        <th>Estado</th>
-                        <th></th>
+            <div className="content-scroll" style={{ paddingTop: '24px' }}>
+              <div className="data-grid-container">
+                <table className="data-grid">
+                  <thead>
+                    <tr><th>Negocio</th><th>Nicho</th><th>Ciudad</th><th>Contacto</th><th>Estado</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredLeads.map(lead => (
+                      <tr key={lead.id} onClick={() => openPanel(lead)}>
+                        <td>
+                          <div className="font-semibold">{lead.name}</div>
+                          <div className="text-xs text-muted mobile-niche">{lead.category}</div>
+                        </td>
+                        <td className="text-sm text-muted">{lead.category}</td>
+                        <td className="text-sm text-muted">{lead.city}</td>
+                        <td className="text-sm">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {lead.phone && <a href={`tel:${lead.phone}`} className="text-muted" style={{textDecoration:'none'}} onClick={e=>e.stopPropagation()}><Phone size={12}/> {lead.phone}</a>}
+                            {lead.website && <div style={{color:'var(--accent-primary)'}}><Globe size={12}/> Web</div>}
+                          </div>
+                        </td>
+                        <td><span className={`status-badge ${getStatusClass(lead.status)}`}>{lead.status}</span></td>
+                        <td><ChevronRight size={18} color="#444" /></td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {filteredLeads.map(lead => (
-                        <tr key={lead.id} onClick={() => openPanel(lead)}>
-                          <td>
-                            <div className="font-semibold">{lead.name}</div>
-                            <div className="text-xs text-muted mobile-niche" style={{ marginTop: '2px' }}>{lead.category}</div>
-                            {lead.rating > 0 && (
-                              <div className="flex-item-center text-sm text-muted" style={{ marginTop: '4px' }}>
-                                <Star size={12} fill="var(--status-pending)" color="var(--status-pending)" /> 
-                                {lead.rating} ({lead.reviews})
-                              </div>
-                            )}
-                          </td>
-                          <td className="text-sm text-muted">{lead.category}</td>
-                          <td className="text-sm text-muted">
-                            <div className="flex-item-center"><MapPin size={14}/> {lead.city || 'N/A'}</div>
-                          </td>
-                          <td className="text-sm">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              {lead.phone && (
-                                <div className="flex-item-center text-muted">
-                                  <Phone size={14}/> 
-                                  <a href={`tel:${lead.phone}`} style={{ color: 'inherit', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>
-                                    {lead.phone}
-                                  </a>
-                                </div>
-                              )}
-                              {lead.website && <div className="flex-item-center" style={{ color: 'var(--accent-primary)' }}><Globe size={14}/> Web</div>}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`status-badge ${getStatusClass(lead.status)}`}>
-                              {lead.status}
-                            </span>
-                          </td>
-                          <td style={{ color: 'var(--text-muted)' }}>
-                            <ChevronRight size={18} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {filteredLeads.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                      No se encontraron resultados.
-                    </div>
-                  )}
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
-        {view === 'upload' && (
-          <UploadView onSuccess={() => { setView('list'); fetchLeads(); }} />
-        )}
+        {view === 'upload' && <UploadView onSuccess={() => { setView('list'); fetchLeads(); }} />}
       </main>
 
-      {/* Side Panel for Editing */}
       {selectedLead && (
         <div className="side-panel-overlay" onClick={() => setSelectedLead(null)}>
           <div className="side-panel" onClick={e => e.stopPropagation()}>
             <div className="panel-header glass-header">
-              <div>
-                <h3 className="text-lg font-semibold">{selectedLead.name}</h3>
-                <p className="text-muted text-sm mt-4">{selectedLead.category}</p>
-              </div>
-              <button 
-                onClick={() => setSelectedLead(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                <X size={24} />
-              </button>
+              <div><h3 className="text-lg font-semibold">{selectedLead.name}</h3><p className="text-muted text-sm mt-4">{selectedLead.category}</p></div>
+              <button onClick={() => setSelectedLead(null)} className="btn-close"><X size={24} /></button>
             </div>
-            
             <div className="panel-content">
               <div className="glass-panel mb-4" style={{ padding: '16px' }}>
-                <h4 className="text-sm font-semibold mb-4 text-muted">Información de Contacto</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-4 text-muted">Detalles</h4>
                 <div style={{ display: 'grid', gap: '12px' }}>
-                  <div className="flex-between text-sm">
-                    <span className="text-muted"><Phone size={14} style={{display:'inline', verticalAlign:'middle', marginRight:'6px'}}/> Teléfono</span>
-                    <span className="font-semibold">
-                      {selectedLead.phone ? (
-                        <a href={`tel:${selectedLead.phone}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
-                          {selectedLead.phone}
-                        </a>
-                      ) : 'No disponible'}
-                    </span>
-                  </div>
-                  <div className="flex-between text-sm">
-                    <span className="text-muted"><Globe size={14} style={{display:'inline', verticalAlign:'middle', marginRight:'6px'}}/> Sitio Web</span>
-                    {selectedLead.website ? (
-                      <a href={selectedLead.website} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }} className="font-semibold">Visitar</a>
-                    ) : (
-                      <span className="font-semibold">No disponible</span>
-                    )}
-                  </div>
-                  <div className="flex-between text-sm">
-                    <span className="text-muted"><MapPin size={14} style={{display:'inline', verticalAlign:'middle', marginRight:'6px'}}/> Ubicación</span>
-                    <span className="font-semibold">{selectedLead.city}, {selectedLead.state || selectedLead.country}</span>
-                  </div>
+                  <div className="flex-between text-sm"><span>Teléfono</span><a href={`tel:${selectedLead.phone}`} style={{color:'var(--accent-primary)', textDecoration:'none'}}>{selectedLead.phone}</a></div>
+                  <div className="flex-between text-sm"><span>Ubicación</span><span>{selectedLead.city}</span></div>
                 </div>
               </div>
-
               <div className="input-group">
-                <label>Estado de Seguimiento</label>
-                <select 
-                  className="input-field"
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
+                <label>Estado</label>
+                <select className="input-field" value={editStatus} onChange={e => setEditStatus(e.target.value)}>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Lead Potencial">Lead Potencial</option>
-                  <option value="No contesta">No contesta</option>
-                  <option value="Negación Total">Negación Total</option>
                   <option value="Cliente Cerrado">Cliente Cerrado</option>
                 </select>
               </div>
-
               <div className="input-group">
-                <label>Notas del Vendedor</label>
-                <textarea 
-                  className="input-field" 
-                  placeholder="Ej: Llamé a las 3pm..."
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                ></textarea>
+                <label>Notas</label>
+                <textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{height:'120px'}}></textarea>
               </div>
             </div>
-            
             <div className="panel-footer glass-header">
-              <button className="btn btn-secondary" onClick={() => setSelectedLead(null)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={saveLead}><Save size={16} /> Guardar Cambios</button>
+              <button className="btn btn-secondary" onClick={() => setSelectedLead(null)}>Cerrar</button>
+              <button className="btn btn-primary" onClick={saveLead}><Save size={16} /> Guardar</button>
             </div>
           </div>
         </div>
@@ -457,77 +398,36 @@ function UploadView({ onSuccess }) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await axios.post(`${API_URL}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await axios.post(`${API_URL}/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setResult(res.data);
       setFile(null);
-    } catch (e) {
-      alert('Error uploading file');
-    } finally {
-      setUploading(false);
-    }
+    } catch (e) { alert('Error'); }
+    finally { setUploading(false); }
   };
 
   return (
-    <>
-      <header className="main-header glass-header">
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Importar Datos</h2>
-          <p className="text-muted text-sm" style={{ marginTop: '4px' }}>Sube archivos de Outscraper (Excel).</p>
-        </div>
-      </header>
-
-      <div className="content-scroll fade-in" style={{ paddingTop: '40px', maxWidth: '800px' }}>
-        <div className="glass-panel" style={{ padding: '40px' }}>
-          {!result ? (
-            <>
-              <div className="file-drop-zone" onClick={() => fileInput.current?.click()}>
-                <input 
-                  type="file" 
-                  ref={fileInput} 
-                  style={{ display: 'none' }} 
-                  accept=".xlsx, .xls, .csv"
-                  onChange={e => setFile(e.target.files?.[0] || null)}
-                />
-                <Upload size={48} className="text-muted" style={{ margin: '0 auto' }} />
-                {file ? (
-                  <p className="font-semibold" style={{ color: 'white' }}>{file.name}</p>
-                ) : (
-                  <>
-                    <p className="font-semibold" style={{ color: 'white' }}>Seleccionar Excel (.xlsx)</p>
-                    <p className="text-sm">Extrae clientes y limpia duplicados.</p>
-                  </>
-                )}
-              </div>
-              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn btn-primary" disabled={!file || uploading} onClick={handleUpload}>
-                  {uploading ? 'Procesando...' : 'Procesar y Agregar'}
-                </button>
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', marginBottom: '20px' }}>
-                <Save size={32} />
-              </div>
-              <h3 className="text-lg font-semibold mb-4">Importación Completada</h3>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px' }}>
-                <div className="glass-panel" style={{ padding: '16px 24px' }}>
-                  <div className="text-sm text-muted">Añadidos</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{result.imported}</div>
-                </div>
-                <div className="glass-panel" style={{ padding: '16px 24px' }}>
-                  <div className="text-sm text-muted">Duplicados</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{result.duplicates}</div>
-                </div>
-              </div>
-              <button className="btn btn-primary" onClick={onSuccess}>Ir al Directorio</button>
+    <div className="fade-in" style={{maxWidth:'800px', margin:'0 auto', paddingTop:'40px'}}>
+      <div className="glass-panel" style={{ padding: '40px', textAlign:'center' }}>
+        <h2 className="text-xl font-bold mb-2">Importar Clientes</h2>
+        {!result ? (
+          <>
+            <div className="file-drop-zone" onClick={() => fileInput.current?.click()}>
+              <input type="file" ref={fileInput} style={{ display: 'none' }} accept=".xlsx" onChange={e => setFile(e.target.files?.[0])} />
+              <Upload size={48} className="text-muted" />
+              {file ? <p className="font-bold">{file.name}</p> : <p>Sube tu archivo Outscraper</p>}
             </div>
-          )}
-        </div>
+            <button className="btn btn-primary mt-6" disabled={!file || uploading} onClick={handleUpload}>{uploading ? 'Procesando...' : 'Importar Ahora'}</button>
+          </>
+        ) : (
+          <div>
+            <div style={{color:'#10b981', marginBottom:'16px'}}><CheckCircle size={64} style={{margin:'0 auto'}}/></div>
+            <h3>¡Éxito!</h3>
+            <p className="text-muted">{result.imported} clientes nuevos añadidos.</p>
+            <button className="btn btn-primary mt-6" onClick={onSuccess}>Ver Clientes</button>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 
