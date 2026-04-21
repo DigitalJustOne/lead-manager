@@ -11,7 +11,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
 
-const API_URL = 'https://lead-manager-tnxt.onrender.com/api';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:3001/api' 
+  : 'https://lead-manager-tnxt.onrender.com/api';
 const SUPABASE_URL = 'https://dmvrmgixqydznratglao.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtdnJtZ2l4cXlkem5yYXRnbGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MTI3NjIsImV4cCI6MjA5MjA4ODc2Mn0.JYybeKQyvMyRXK-fxbL8m5L-I6PbdAolF8XI-8ccwcw';
 
@@ -165,7 +167,7 @@ function App() {
     const normalizeStr = (s) => (s || '').toLowerCase();
     const isClosed = (s) => {
       const n = normalizeStr(s);
-      return n.includes('cerrado') || n.includes('cliente') || n.includes('ganado') || n.includes('venta');
+      return n.includes('cerrado') || n.includes('cliente') || n.includes('ganado') || n.includes('venta') || n.includes('perdido') || n.includes('equivocado') || n.includes('errado');
     };
     const isPotential = (s) => {
       const n = normalizeStr(s);
@@ -206,7 +208,7 @@ function App() {
         <div className="login-card glass-panel fade-in">
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <div className="login-icon"><Lock size={32} color="var(--accent-primary)" /></div>
-            <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>Global CRM</h1>
+            <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>VRS CRM Leads</h1>
             <p className="text-muted text-sm mt-4">Premium Lead Management</p>
           </div>
           <form onSubmit={handleLogin} style={{ display: 'grid', gap: '20px' }}>
@@ -223,18 +225,19 @@ function App() {
   return (
     <div className="app-container">
       <aside className="sidebar premium-sidebar">
-        <div className="sidebar-header"><div className="brand"><div className="brand-logo"><TrendingUp size={20} /></div><div><h1 className="brand-name">Global CRM</h1><p className="brand-tagline">Enterprise Edition</p></div></div></div>
+        <div className="sidebar-header"><div className="brand"><div className="brand-logo"><TrendingUp size={20} /></div><div><h1 className="brand-name">VRS CRM Leads</h1><p className="brand-tagline">Enterprise Edition</p></div></div></div>
         <nav className="sidebar-nav">
           <div className="nav-group"><span className="nav-label">General</span>
             <button onClick={() => switchView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
             <button onClick={() => switchView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
             <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar Masivo</span></button>
+            <button onClick={() => switchView('add_manual')} className={`nav-link ${view === 'add_manual' ? 'active' : ''}`}><Plus size={18} /> <span>Agregar Manual</span></button>
           </div>
         </nav>
         <div className="sidebar-footer">
           <div className="user-info">
             <div className="user-avatar">{session.user.email[0].toUpperCase()}</div>
-            <div className="user-details"><span className="user-email">{session.user.email.split('@')[0]}</span><span className="user-role">Admin</span></div>
+            <div className="user-details"><span className="user-email">Victor</span><span className="user-role">Admin</span></div>
           </div>
           <button className="btn btn-logout w-full" onClick={handleLogout}><LogOut size={16} /> <span>Salir</span></button>
         </div>
@@ -317,6 +320,7 @@ function App() {
           </div>
         )}
         {view === 'upload' && <UploadView onSuccess={() => { setView('list'); fetchLeads(); }} />}
+        {view === 'add_manual' && <AddManualView onSuccess={() => { setView('list'); fetchLeads(); }} />}
       </main>
 
       {selectedLead && (
@@ -395,6 +399,7 @@ function App() {
         <button onClick={() => switchView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
         <button onClick={() => switchView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
         <button onClick={() => switchView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
+        <button onClick={() => switchView('add_manual')} className={`mobile-nav-item ${view === 'add_manual' ? 'active' : ''}`}><Plus size={24} /><span>Más</span></button>
         <button onClick={handleLogout} className="mobile-nav-item"><LogOut size={24} /><span>Salir</span></button>
       </nav>
     </div>
@@ -407,7 +412,7 @@ const DashboardView = React.memo(({ data, user, onRefresh, loading }) => {
     <div className="dashboard-container fade-in">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 className="page-title">Hola, {user.split('@')[0]}</h2>
+          <h2 className="page-title">Hola, Victor</h2>
           <p className="page-subtitle">Rendimiento en tiempo real.</p>
         </div>
         <button className={`btn btn-secondary ${loading ? 'spin' : ''}`} onClick={onRefresh} style={{ padding: '10px' }}>
@@ -513,6 +518,110 @@ function UploadView({ onSuccess }) {
             <button className="btn btn-primary mt-10 w-full" style={{py: '12px'}} onClick={onSuccess}>Ver Clientes Actualizados</button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AddManualView({ onSuccess }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    website: '',
+    category: '',
+    city: '',
+    address: '',
+    status: 'Pendiente',
+    notes: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await axios.post(`${API_URL}/leads`, formData);
+      onSuccess();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Error al guardar el cliente');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="fade-in" style={{ maxWidth: '800px', margin: '0 auto', paddingTop: '40px', paddingBottom: '100px' }}>
+      <div className="glass-panel" style={{ padding: '40px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+          <div style={{ background: 'var(--accent-primary)', padding: '12px', borderRadius: '12px', color: 'white' }}>
+            <Plus size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Agregar Manualmente</h2>
+            <p className="text-muted text-sm">Ingresa los detalles del nuevo cliente o potencial lead.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+          <div className="input-group" style={{ gridColumn: 'span 2' }}>
+            <label>Nombre del Negocio / Cliente *</label>
+            <input type="text" name="name" className="input-field" value={formData.name} onChange={handleChange} required placeholder="Ej: Restaurante El Gourmet" />
+          </div>
+
+          <div className="input-group">
+            <label>Teléfono / Contacto</label>
+            <input type="text" name="phone" className="input-field" value={formData.phone} onChange={handleChange} placeholder="Ej: +57 300..." />
+          </div>
+
+          <div className="input-group">
+            <label>Sitio Web</label>
+            <input type="url" name="website" className="input-field" value={formData.website} onChange={handleChange} placeholder="Ej: https://..." />
+          </div>
+
+          <div className="input-group">
+            <label>Categoría / Nicho</label>
+            <input type="text" name="category" className="input-field" value={formData.category} onChange={handleChange} placeholder="Ej: Gastronomía" />
+          </div>
+
+          <div className="input-group">
+            <label>Ciudad</label>
+            <input type="text" name="city" className="input-field" value={formData.city} onChange={handleChange} placeholder="Ej: Medellín" />
+          </div>
+
+          <div className="input-group" style={{ gridColumn: 'span 2' }}>
+            <label>Dirección Completa</label>
+            <input type="text" name="address" className="input-field" value={formData.address} onChange={handleChange} placeholder="Ej: Calle 10 # 50-20..." />
+          </div>
+
+          <div className="input-group" style={{ gridColumn: 'span 2' }}>
+            <label>Estado Inicial</label>
+            <select name="status" className="input-field" value={formData.status} onChange={handleChange}>
+              <option value="Pendiente">⏳ Pendiente</option>
+              <option value="Contactado">📞 Contactado</option>
+              <option value="Lead Potencial">⭐ VIP / Potencial</option>
+              <option value="Cita Agendada">📅 Cita Agendada</option>
+              <option value="Venta Cerrada">✅ Venta Ganada</option>
+              <option value="Lead Perdido">🗑️ Lead Perdido</option>
+              <option value="Número Equivocado">❌ Número Equivocado</option>
+            </select>
+          </div>
+
+          <div className="input-group" style={{ gridColumn: 'span 2' }}>
+            <label>Notas Iniciales</label>
+            <textarea name="notes" className="input-field" value={formData.notes} onChange={handleChange} style={{ height: '100px' }} placeholder="Detalles relevantes..."></textarea>
+          </div>
+
+          <div style={{ gridColumn: 'span 2', display: 'flex', gap: '12px', marginTop: '10px' }}>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={saving}>
+              {saving ? 'Guardando...' : 'Guardar Nuevo Lead'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

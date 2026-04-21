@@ -173,6 +173,49 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
+// Create manual lead
+app.post('/api/leads', async (req, res) => {
+    const lead = req.body;
+    
+    try {
+        if (!lead.name) {
+            return res.status(400).json({ error: 'El nombre es obligatorio' });
+        }
+
+        // Generamos un ID basado en el nombre si no hay uno real
+        const place_id = lead.place_id || 'manual-' + (lead.name + (lead.phone || '')).replace(/[^a-zA-Z0-9]/g, '').substring(0, 50) + '-' + Date.now();
+
+        const leadToInsert = {
+            place_id,
+            name: lead.name.substring(0, 250),
+            phone: lead.phone ? lead.phone.toString().substring(0, 50) : '',
+            website: lead.website ? lead.website.toString().substring(0, 500) : '',
+            category: (lead.category || '').substring(0, 100),
+            city: (lead.city || '').substring(0, 100),
+            address: (lead.address || '').substring(0, 500),
+            rating: parseFloat(lead.rating) || 0,
+            reviews: parseInt(lead.reviews) || 0,
+            status: lead.status || 'Pendiente',
+            notes: lead.notes || ''
+        };
+
+        const { data, error } = await supabase
+            .from('leads')
+            .upsert([leadToInsert], { onConflict: 'place_id' })
+            .select();
+
+        if (error) throw error;
+
+        res.json({
+            message: 'success',
+            data: data[0]
+        });
+    } catch (e) {
+        console.error('Manual lead error:', e);
+        res.status(400).json({ error: e.message });
+    }
+});
+
 // Update lead status/notes
 app.put('/api/leads/:id', async (req, res) => {
     const { status, notes } = req.body;
