@@ -5,11 +5,12 @@ import {
   Users, BarChart3, Upload, Search, Filter, 
   ChevronRight, Phone, Globe, Star, MapPin, X, Save, Lock, LogOut,
   TrendingUp, Target, CheckCircle, Clock, LayoutDashboard, Database, Zap, Plus,
-  Menu, RefreshCw, AlertTriangle
+  Menu, RefreshCw, AlertTriangle, Map
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
+import MapaCalorView from './MapaCalorView';
 
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3001/api' 
@@ -281,6 +282,7 @@ function App() {
           <div className="nav-group"><span className="nav-label">General</span>
             <button onClick={() => switchView('dashboard')} className={`nav-link ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={18} /> <span>Panel</span></button>
             <button onClick={() => switchView('list')} className={`nav-link ${view === 'list' ? 'active' : ''}`}><Users size={18} /> <span>Clientes</span></button>
+            <button onClick={() => switchView('mapa')} className={`nav-link ${view === 'mapa' ? 'active' : ''}`}><Map size={18} /> <span>Mapa de Calor</span></button>
             <button onClick={() => switchView('upload')} className={`nav-link ${view === 'upload' ? 'active' : ''}`}><Upload size={18} /> <span>Importar Masivo</span></button>
             <button onClick={() => switchView('add_manual')} className={`nav-link ${view === 'add_manual' ? 'active' : ''}`}><Plus size={18} /> <span>Agregar Manual</span></button>
           </div>
@@ -296,6 +298,7 @@ function App() {
 
       <main className="main-content">
         {view === 'dashboard' && <DashboardView data={statsData} user={session.user.email} onRefresh={fetchLeads} loading={loading} />}
+        {view === 'mapa' && <MapaCalorView leads={leads} />}
         {view === 'list' && (
           <div className="fade-in">
             <header className="main-header glass-header">

@@ -1,0 +1,105 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Usaquén" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.03, 4.75], [-73.98, 4.75], [-73.98, 4.71], [-74.03, 4.71], [-74.03, 4.75]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Chapinero" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.065, 4.68], [-74.03, 4.68], [-74.03, 4.63], [-74.065, 4.63], [-74.065, 4.68]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Santa Fe" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.065, 4.63], [-74.04, 4.63], [-74.04, 4.58], [-74.065, 4.58], [-74.065, 4.63]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "San Cristóbal" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.04, 4.555], [-74.0, 4.555], [-74.0, 4.505], [-74.04, 4.505], [-74.04, 4.555]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Usme" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.17, 4.505], [-74.06, 4.505], [-74.06, 4.40], [-74.17, 4.40], [-74.17, 4.505]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Tunjuelito" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.15, 4.54], [-74.10, 4.54], [-74.10, 4.505], [-74.15, 4.505], [-74.15, 4.54]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Bosa" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.22, 4.59], [-74.14, 4.59], [-74.14, 4.54], [-74.22, 4.54], [-74.22, 4.59]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Kennedy" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.22, 4.645], [-74.14, 4.645], [-74.14, 4.59], [-74.22, 4.59], [-74.22, 4.645]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Fontibón" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.165, 4.705], [-74.10, 4.705], [-74.10, 4.645], [-74.165, 4.645], [-74.165, 4.705]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Engativá" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.165, 4.745], [-74.09, 4.745], [-74.09, 4.70], [-74.165, 4.70], [-74.165, 4.745]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Suba" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.14, 4.79], [-74.04, 4.79], [-74.04, 4.745], [-74.14, 4.745], [-74.14, 4.79]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Barrios Unidos" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.09, 4.68], [-74.065, 4.68], [-74.065, 4.645], [-74.09, 4.645], [-74.09, 4.68]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Teusaquillo" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.10, 4.645], [-74.065, 4.645], [-74.065, 4.61], [-74.10, 4.61], [-74.10, 4.645]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Los Mártires" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.10, 4.61], [-74.065, 4.61], [-74.065, 4.585], [-74.10, 4.585], [-74.10, 4.61]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Antonio Nariño" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.10, 4.575], [-74.065, 4.575], [-74.065, 4.545], [-74.10, 4.545], [-74.10, 4.575]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Puente Aranda" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.145, 4.61], [-74.10, 4.61], [-74.10, 4.565], [-74.145, 4.565], [-74.145, 4.61]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "La Candelaria" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.065, 4.60], [-74.04, 4.60], [-74.04, 4.583], [-74.065, 4.583], [-74.065, 4.60]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Rafael Uribe Uribe" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.10, 4.545], [-74.05, 4.545], [-74.05, 4.505], [-74.10, 4.505], [-74.10, 4.545]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Ciudad Bolívar" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.22, 4.54], [-74.10, 4.54], [-74.10, 4.40], [-74.22, 4.40], [-74.22, 4.54]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Sumapaz" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.45, 4.40], [-74.17, 4.40], [-74.17, 4.15], [-74.45, 4.15], [-74.45, 4.40]]] }
+    }
+  ]
+}
