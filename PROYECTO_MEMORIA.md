@@ -136,7 +136,7 @@ Barra fija en la parte inferior con: Inicio | Clientes | Subir | Más | Salir
 
 1. **Datos incompletos:** Muchos leads importados no tienen dirección o teléfono porque el Excel del scraper no los incluía. Solución: editar manualmente o re-scrapear con columnas correctas.
 2. **Ciudad siempre es Bogotá:** La columna ciudad fue eliminada de la tabla (se muestra dirección en su lugar). La ciudad podría llenarse automáticamente al importar.
-3. **Filtrado por nicho:** Actualmente se puede filtrar por estado y por web. Falta filtro por categoría/nicho de belleza.
+3. **Filtrado por ubicación:** Se añadió un filtro para buscar por cualquiera de las 20 localidades de Bogotá extrayendo la coincidencia del texto de la dirección. Queda pendiente (opcional) un selector extra por rubro/nicho de belleza en el dashboard.
 
 ---
 

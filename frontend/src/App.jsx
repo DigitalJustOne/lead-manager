@@ -20,6 +20,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+const LOCALIDADES_BOGOTA = [
+  'Usaquén', 'Chapinero', 'Santa Fe', 'San Cristóbal', 'Usme', 'Tunjuelito', 'Bosa', 'Kennedy', 'Fontibón', 'Engativá', 'Suba', 'Barrios Unidos', 'Teusaquillo', 'Los Mártires', 'Antonio Nariño', 'Puente Aranda', 'La Candelaria', 'Rafael Uribe Uribe', 'Ciudad Bolívar', 'Sumapaz'
+];
+
 const LeadRow = React.memo(({ lead, onOpen }) => (
   <>
     {/* Vista DESKTOP: fila de tabla */}
@@ -98,6 +102,7 @@ function App() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterWebsite, setFilterWebsite] = useState('All');
+  const [filterLocalidad, setFilterLocalidad] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
   const [activeTab, setActiveTab] = useState('all'); // all, pending, active, closed
   const [visibleCount, setVisibleCount] = useState(50);
@@ -168,6 +173,10 @@ function App() {
       if (filterStatus !== 'All' && lead.status !== filterStatus) return false;
       if (filterWebsite === 'yes' && !lead.website) return false;
       if (filterWebsite === 'no' && lead.website) return false;
+      if (filterLocalidad !== 'All') {
+        const addrLower = normalize(lead.address);
+        if (!addrLower.includes(normalize(filterLocalidad))) return false;
+      }
       return true;
     });
     
@@ -177,7 +186,7 @@ function App() {
     else if (sortBy === 'rating_desc') result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     else if (sortBy === 'rating_asc') result.sort((a, b) => (a.rating || 0) - (b.rating || 0));
     return result;
-  }, [debouncedSearch, filterStatus, filterWebsite, sortBy, leads, activeTab]);
+  }, [debouncedSearch, filterStatus, filterWebsite, filterLocalidad, sortBy, leads, activeTab]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, visibleCount), [filteredLeads, visibleCount]);
 
@@ -343,6 +352,16 @@ function App() {
                       <option value="All">Cualquier Web</option>
                       <option value="yes">🌍 Con Sitio Web</option>
                       <option value="no">🚫 Sin Sitio Web</option>
+                    </select>
+                  </div>
+
+                  <div className="select-wrapper">
+                    <MapPin size={14} />
+                    <select value={filterLocalidad} onChange={e => setFilterLocalidad(e.target.value)}>
+                      <option value="All">Cualquier Localidad</option>
+                      {LOCALIDADES_BOGOTA.map(loc => (
+                        <option key={loc} value={loc}>📍 {loc}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
