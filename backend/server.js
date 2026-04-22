@@ -244,14 +244,14 @@ app.put('/api/leads/:id', async (req, res) => {
         const updateData = {};
         if (status !== undefined) updateData.status = status;
         if (notes !== undefined) updateData.notes = notes;
-        if (name !== undefined) updateData.name = name.substring(0, 250);
-        if (phone !== undefined) updateData.phone = phone.toString().substring(0, 50);
-        if (website !== undefined) updateData.website = website.toString().substring(0, 500);
-        if (category !== undefined) updateData.category = category.substring(0, 100);
-        if (city !== undefined) updateData.city = city.substring(0, 100);
+        if (name !== undefined) updateData.name = name ? String(name).substring(0, 250) : '';
+        if (phone !== undefined) updateData.phone = phone ? String(phone).substring(0, 50) : '';
+        if (website !== undefined) updateData.website = website ? String(website).substring(0, 500) : '';
+        if (category !== undefined) updateData.category = category ? String(category).substring(0, 100) : '';
+        if (city !== undefined) updateData.city = city ? String(city).substring(0, 100) : '';
         if (address !== undefined) {
-            updateData.address = address.substring(0, 500);
-            if (localidad === undefined) updateData.localidad = extractLocalidad(address);
+            updateData.address = address ? String(address).substring(0, 500) : '';
+            if (localidad === undefined) updateData.localidad = extractLocalidad(updateData.address);
         }
         if (localidad !== undefined) updateData.localidad = localidad ? String(localidad).substring(0, 100) : '';
         if (rating !== undefined) updateData.rating = parseFloat(rating) || 0;
