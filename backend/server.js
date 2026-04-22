@@ -253,7 +253,7 @@ app.put('/api/leads/:id', async (req, res) => {
             updateData.address = address.substring(0, 500);
             if (localidad === undefined) updateData.localidad = extractLocalidad(address);
         }
-        if (localidad !== undefined) updateData.localidad = localidad.substring(0, 100);
+        if (localidad !== undefined) updateData.localidad = localidad ? String(localidad).substring(0, 100) : '';
         if (rating !== undefined) updateData.rating = parseFloat(rating) || 0;
         if (reviews !== undefined) updateData.reviews = parseInt(reviews) || 0;
 
