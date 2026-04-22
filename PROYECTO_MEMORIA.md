@@ -72,13 +72,21 @@ d:\seguimientos del scrapeo\
 - Estadísticas: Total leads, Cerrados, VIP, Pendientes
 - Gráficos: Distribución por estado (Pie), Top ciudades (Bar)
 
-### 🔄 Estados de gestión
-- Pendiente ⏳
-- Contactado 📞
-- Lead Potencial / VIP ⭐
-- Cita Agendada 📅
-- Venta Cerrada ✅
-- Lead Perdido 🗑️
+### 🔄 Flujo de Trabajo y Estados de Gestión (Embudo CRM)
+
+El CRM está diseñado para mantener una "Bandeja de Entrada" limpia. Se maneja mediante un sistema de pestañas que actúan como un embudo de ventas:
+
+1. **📥 Nuevos (Estado: `Pendiente ⏳`)**
+   - Son los leads vírgenes que acaban de ser importados o creados.
+   - Solo estos aparecen en la vista **"📋 Activos"** (o "Directorio Maestro"). Representan la lista de "tareas por hacer" o leads pendientes por contactar por primera vez.
+
+2. **🎯 En Gestión (Estados: `Contactado 📞`, `Lead Potencial / VIP ⭐`, `Cita Agendada 📅`)**
+   - Cuando un lead recibe una llamada inicial y la gestión avanza, se actualiza a uno de estos estados.
+   - **Regla Estricta:** En el momento exacto en que un lead pasa a estar "En Gestión", **desaparece del panel general de "Activos"**. Así el panel principal se mantiene enfocado exclusivamente en leads nuevos sin tocar. Para seguir trabajando con estos leads, se buscan en la pestaña "🎯 En Gestión".
+
+3. **🏁 Finalizados (Estados: `Venta Cerrada ✅`, `Lead Perdido 🗑️`, `Número Equivocado ❌`)**
+   - Leads que terminaron su ciclo de forma definitiva, ya sea en éxito o rechazo.
+   - Se archivan en la vista de "🏁 Finalizados" para registro histórico y reportes de efectividad, no molestando en el día a día.
 
 ---
 
@@ -137,8 +145,18 @@ Barra fija en la parte inferior con: Inicio | Clientes | Subir | Más | Salir
 ## ⚠️ Problemas conocidos / Pendientes
 
 1. **Datos incompletos:** Muchos leads importados no tienen dirección o teléfono porque el Excel del scraper no los incluía. Solución: editar manualmente o re-scrapear con columnas correctas.
-2. **Filtros avanzados:** Se añadió extración y filtro automático de Localidades de Bogotá a partir de la dirección.
+2. **Filtros avanzados:** Se añadió extracción y filtro automático de Localidades de Bogotá a partir de la dirección.
 3. **Filtrado por nicho:** Falta filtro por categoría/nicho de belleza.
+
+---
+
+## 📈 Escalabilidad y Visión a Futuro
+
+Para efectos de escalabilidad de este CRM y maximizar el aprovechamiento de los datos almacenados, la siguiente implementación arquitectónica será:
+
+- **🗺️ Mapa de Calor (Heatmap) Interactivo Geográfico:**
+  Se planea construir un mapa interactivo de Bogotá integrado en el CRM que tomará las coordenadas y direcciones almacenadas de cada negocio (basado en el campo `address` y `localidad`) para proyectar manchas de calor espaciales.
+  *Objetivo Comercial:* Permitirle al equipo observar de un vistazo en qué zonas de Bogotá hay alta saturación de leads potenciales, planear visitas presenciales ordenadas (planeamiento de ruta por localidad) y analizar tendencias de éxito geográficas de manera visual y altamente corporativa.
 
 ---
 
