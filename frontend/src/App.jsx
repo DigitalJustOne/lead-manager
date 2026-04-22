@@ -21,19 +21,60 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const LeadRow = React.memo(({ lead, onOpen }) => (
-  <tr onClick={() => onOpen(lead)}>
-    <td><div className="font-semibold">{lead.name}</div><div className="text-xs text-muted mobile-niche">{lead.category}</div></td>
-    <td className="text-sm text-muted">{lead.category}</td>
-    <td className="text-sm text-muted">{lead.city}</td>
-    <td className="text-sm">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {lead.phone && <a href={`tel:${lead.phone}`} className="text-muted" style={{textDecoration:'none'}} onClick={e=>e.stopPropagation()}><Phone size={12}/> {lead.phone}</a>}
-        {lead.website && <div style={{color:'var(--accent-primary)'}}><Globe size={12}/> Web</div>}
-      </div>
-    </td>
-    <td><span className={`status-badge ${getStatusClass(lead.status)}`}>{lead.status || 'Pendiente'}</span></td>
-    <td><ChevronRight size={18} color="#444" /></td>
-  </tr>
+  <>
+    {/* Vista DESKTOP: fila de tabla */}
+    <tr className="lead-table-row" onClick={() => onOpen(lead)}>
+      <td>
+        <div className="font-semibold">{lead.name}</div>
+        <div className="text-xs text-muted mobile-niche">{lead.category}</div>
+      </td>
+      <td className="text-sm text-muted">{lead.category}</td>
+      <td className="text-sm">
+        <div className="flex-item-center" style={{ gap: '6px' }}>
+          <MapPin size={14} className="text-muted" />
+          <span className="text-muted truncate" style={{ maxWidth: '200px' }}>{lead.address || 'Sin dirección'}</span>
+        </div>
+      </td>
+      <td className="text-sm">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {lead.phone && <a href={`tel:${lead.phone}`} className="text-muted font-bold" style={{textDecoration:'none'}} onClick={e=>e.stopPropagation()}><Phone size={12}/> {lead.phone}</a>}
+          {lead.website && <div style={{color:'var(--accent-primary)', fontSize: '11px'}}><Globe size={11}/> Web</div>}
+        </div>
+      </td>
+      <td><span className={`status-badge ${getStatusClass(lead.status)}`}>{lead.status || 'Pendiente'}</span></td>
+      <td><ChevronRight size={18} color="#444" /></td>
+    </tr>
+
+    {/* Vista MÓVIL: tarjeta */}
+    <tr className="lead-mobile-card" onClick={() => onOpen(lead)}>
+      <td colSpan="6" style={{ padding: '0', borderBottom: '1px solid var(--border-color)' }}>
+        <div className="mobile-lead-card">
+          <div className="mobile-lead-header">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="mobile-lead-name">{lead.name}</div>
+              {lead.category && <div className="mobile-lead-cat">{lead.category}</div>}
+            </div>
+            <span className={`status-badge ${getStatusClass(lead.status)}`}>{lead.status || 'Pendiente'}</span>
+          </div>
+          {lead.address && (
+            <div className="mobile-lead-row">
+              <MapPin size={13} style={{ color: 'var(--accent-secondary)', flexShrink: 0 }} />
+              <span>{lead.address}</span>
+            </div>
+          )}
+          {lead.phone && (
+            <div className="mobile-lead-row">
+              <Phone size={13} style={{ color: '#10b981', flexShrink: 0 }} />
+              <a href={`tel:${lead.phone}`} style={{ color: '#10b981', textDecoration: 'none', fontWeight: 600 }} onClick={e => e.stopPropagation()}>{lead.phone}</a>
+            </div>
+          )}
+          <div className="mobile-lead-arrow">
+            <ChevronRight size={16} color="#444" />
+          </div>
+        </div>
+      </td>
+    </tr>
+  </>
 ));
 
 const getStatusClass = (status) => {
@@ -64,8 +105,8 @@ function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [editStatus, setEditStatus] = useState('');
-  const [editNotes, setEditNotes] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -150,17 +191,20 @@ function App() {
 
   const openPanel = useCallback((lead) => {
     setSelectedLead(lead);
-    setEditStatus(lead.status || 'Pendiente');
-    setEditNotes(lead.notes || '');
+    setEditFormData({ ...lead });
+    setIsEditing(false);
   }, []);
 
   const saveLead = async () => {
     if (!selectedLead) return;
     try {
-      await axios.put(`${API_URL}/leads/${selectedLead.id}`, { status: editStatus, notes: editNotes });
-      setLeads(leads.map(l => l.id === selectedLead.id ? {...l, status: editStatus, notes: editNotes} : l));
+      setLoading(true);
+      await axios.put(`${API_URL}/leads/${selectedLead.id}`, editFormData);
+      setLeads(leads.map(l => l.id === selectedLead.id ? {...l, ...editFormData} : l));
       setSelectedLead(null);
-    } catch (e) { alert('Error'); }
+      setIsEditing(false);
+    } catch (e) { alert('Error al guardar los cambios'); }
+    finally { setLoading(false); }
   };
 
   const statsData = useMemo(() => {
@@ -306,7 +350,7 @@ function App() {
             </header>
             <div className="data-grid-container content-scroll mt-6">
               <table className="data-grid">
-                <thead><tr><th>Negocio</th><th>Nicho</th><th>Ciudad</th><th>Contacto</th><th>Estado</th><th></th></tr></thead>
+                <thead><tr><th>Negocio</th><th>Nicho</th><th>Ubicación / Dirección</th><th>Contacto</th><th>Estado</th><th></th></tr></thead>
                 <tbody>{visibleLeads.map(l => <LeadRow key={l.id} lead={l} onOpen={openPanel} />)}</tbody>
               </table>
               {visibleCount < filteredLeads.length && (
@@ -333,37 +377,122 @@ function App() {
             <div className="panel-content">
               <div className="glass-panel mb-4" style={{ padding: '20px' }}>
                 <div style={{ display: 'grid', gap: '16px' }}>
-                  <div className="flex-between">
-                    <span className="text-muted text-xs uppercase tracking-wider">Valoración</span>
-                    <div className="flex-item-center" style={{ gap: '4px', color: '#f59e0b' }}>
-                      <Star size={14} fill="#f59e0b" />
-                      <span className="font-bold">{selectedLead.rating || '0.0'}</span>
-                      <span className="text-muted text-xs">({selectedLead.reviews || 0} reseñas)</span>
+                  <div className="input-group">
+                    <label className="text-muted text-xs uppercase tracking-wider">Nombre del Negocio</label>
+                    <input 
+                      className="input-field" 
+                      value={editFormData.name || ''} 
+                      onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="edit-grid">
+                    <div className="input-group">
+                      <label>Teléfono</label>
+                      <input 
+                        className="input-field" 
+                        value={editFormData.phone || ''} 
+                        onChange={e => setEditFormData({...editFormData, phone: e.target.value})}
+                      />
+                      {editFormData.phone && (
+                        <a 
+                          href={`tel:${editFormData.phone}`} 
+                          className="btn-call-premium"
+                        >
+                          <Phone size={18} /> LLAMAR AHORA
+                        </a>
+                      )}
+                    </div>
+                    <div className="input-group">
+                      <label>Categoría / Nicho</label>
+                      <select
+                        className="input-field"
+                        value={editFormData.category || ''}
+                        onChange={e => setEditFormData({...editFormData, category: e.target.value})}
+                        style={{ background: 'var(--bg-dark)', cursor: 'pointer' }}
+                      >
+                        <option value="">— Sin categoría —</option>
+                        <optgroup label="💅 Belleza & Cuidado Personal">
+                          <option value="Salón de Uñas">💅 Salón de Uñas</option>
+                          <option value="Peluquería">✂️ Peluquería</option>
+                          <option value="Barbería">🪒 Barbería</option>
+                          <option value="Spa & Masajes">💆 Spa & Masajes</option>
+                          <option value="Centro de Estética">✨ Centro de Estética</option>
+                          <option value="Maquillaje & Cejas">💄 Maquillaje & Cejas</option>
+                          <option value="Depilación">🌸 Depilación</option>
+                          <option value="Bronceado & Sauna">🌞 Bronceado & Sauna</option>
+                          <option value="Pestañas & Extensiones">👁️ Pestañas & Extensiones</option>
+                          <option value="Estética Corporal">🏋️ Estética Corporal</option>
+                        </optgroup>
+                        <optgroup label="🏪 Otros">
+                          <option value="Salon Comunal">🏢 Salón Comunal</option>
+                          <option value="Otro">🔖 Otro</option>
+                        </optgroup>
+                      </select>
                     </div>
                   </div>
                   
-                  <div className="flex-between">
-                    <span className="text-muted text-xs uppercase tracking-wider">Contacto</span>
-                    <div style={{ textAlign: 'right' }}>
-                      <a href={`tel:${selectedLead.phone}`} className="block font-semibold" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>{selectedLead.phone}</a>
-                      {selectedLead.website && <a href={selectedLead.website} target="_blank" rel="noreferrer" className="text-xs text-muted block mt-1">Visitar Sitio Web</a>}
-                    </div>
+                  <div className="input-group">
+                    <label className="text-muted text-xs uppercase tracking-wider">Sitio Web</label>
+                    <input 
+                      className="input-field" 
+                      value={editFormData.website || ''} 
+                      onChange={e => setEditFormData({...editFormData, website: e.target.value})}
+                      placeholder="https://..."
+                    />
                   </div>
 
-                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                    <span className="text-muted text-xs uppercase tracking-wider block mb-2">Ubicación</span>
-                    <div className="flex-item-center" style={{ gap: '8px', marginBottom: '8px' }}>
-                      <MapPin size={14} className="text-muted" />
-                      <span className="text-sm">{selectedLead.address || selectedLead.city}</span>
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', marginTop: '8px' }}>
+                    <div className="edit-grid">
+                      <div className="input-group">
+                        <label>Ciudad</label>
+                        <input 
+                          className="input-field" 
+                          value={editFormData.city || ''} 
+                          onChange={e => setEditFormData({...editFormData, city: e.target.value})}
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label>⭐ Calificación (sobre 5)</label>
+                        <input 
+                          type="number" step="0.1" min="0" max="5"
+                          className="input-field" 
+                          value={editFormData.rating || ''} 
+                          placeholder="Ej: 4.1"
+                          onChange={e => setEditFormData({...editFormData, rating: e.target.value})}
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label>💬 Cantidad de Reseñas</label>
+                        <input 
+                          type="number" min="0"
+                          className="input-field" 
+                          value={editFormData.reviews || ''} 
+                          placeholder="Ej: 128"
+                          onChange={e => setEditFormData({...editFormData, reviews: e.target.value})}
+                        />
+                      </div>
                     </div>
-                    <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedLead.name + ' ' + (selectedLead.address || selectedLead.city))}`}
-                      target="_blank" rel="noreferrer"
-                      className="btn btn-secondary w-full text-xs"
-                      style={{ padding: '8px' }}
-                    >
-                      Ver en Google Maps
-                    </a>
+
+                    <div className="input-group" style={{ marginTop: '8px' }}>
+                      <label>Dirección</label>
+                      <input 
+                        className="input-field" 
+                        value={editFormData.address || ''} 
+                        onChange={e => setEditFormData({...editFormData, address: e.target.value})}
+                        placeholder="Ej: Cl. 59a Sur #42..."
+                      />
+                    </div>
+                    {editFormData.name && (
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editFormData.name + ' ' + (editFormData.address || editFormData.city))}`}
+                        target="_blank" rel="noreferrer"
+                        className="btn btn-secondary w-full text-xs mt-3"
+                        style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }}
+                      >
+                        <MapPin size={14} style={{marginRight: '6px'}}/> Abrir Ubicación en Google Maps
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -372,8 +501,8 @@ function App() {
                 <label>Estado de Gestión</label>
                 <select 
                   className="input-field w-full" 
-                  value={editStatus} 
-                  onChange={e => setEditStatus(e.target.value)}
+                  value={editFormData.status || 'Pendiente'} 
+                  onChange={e => setEditFormData({...editFormData, status: e.target.value})}
                   style={{ background: 'var(--bg-card)', fontSize: '0.95rem' }}
                 >
                   <option value="Pendiente">⏳ Pendiente</option>
@@ -385,11 +514,22 @@ function App() {
                   <option value="Número Equivocado">❌ Número Equivocado</option>
                 </select>
               </div>
-              <div className="input-group"><label>Notas del Seguimiento</label><textarea className="input-field" value={editNotes} onChange={e => setEditNotes(e.target.value)} style={{ height: '150px' }} placeholder="Escribe aquí los detalles de la conversación..."></textarea></div>
+              <div className="input-group">
+                <label>Notas del Seguimiento</label>
+                <textarea 
+                  className="input-field" 
+                  value={editFormData.notes || ''} 
+                  onChange={e => setEditFormData({...editFormData, notes: e.target.value})} 
+                  style={{ height: '120px' }} 
+                  placeholder="Escribe aquí los detalles de la conversación..."
+                ></textarea>
+              </div>
             </div>
             <div className="panel-footer glass-header">
-              <button className="btn btn-secondary" onClick={() => setSelectedLead(null)}>Cerrar</button>
-              <button className="btn btn-primary" onClick={saveLead}><Save size={16} /> Guardar</button>
+              <button className="btn btn-secondary" onClick={() => setSelectedLead(null)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={saveLead} disabled={loading}>
+                <Save size={16} /> {loading ? 'Guardando...' : 'Actualizar Cliente'}
+              </button>
             </div>
           </div>
         </div>
@@ -427,12 +567,12 @@ const DashboardView = React.memo(({ data, user, onRefresh, loading }) => {
         <StatCard icon={<Target />} val={stats.potential} label="VIP" color="#f59e0b" />
         <StatCard icon={<Clock />} val={stats.pending} label="Pendiente" color="#ef4444" />
       </div>
-      <div className="charts-grid">
-        <div className="chart-card glass-panel"><h3 className="chart-title">Distribución</h3>
-          <div style={{ height: '250px' }}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={byStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{byStatus.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /></PieChart></ResponsiveContainer></div>
+      <div className="charts-grid" style={{ minWidth: 0 }}>
+        <div className="chart-card glass-panel" style={{ minWidth: 0 }}><h3 className="chart-title">Distribución</h3>
+          <div style={{ height: '250px', minWidth: 0 }}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={byStatus} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{byStatus.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /></PieChart></ResponsiveContainer></div>
         </div>
-        <div className="chart-card glass-panel"><h3 className="chart-title">Top Ciudades</h3>
-          <div style={{ height: '250px' }}><ResponsiveContainer width="100%" height="100%"><BarChart data={byCity} margin={{ bottom: 20 }}><XAxis dataKey="name" fontSize={10} stroke="#666" tick={{fill: '#666'}} /><YAxis fontSize={10} stroke="#666" tick={{fill: '#666'}} /><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /><Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
+        <div className="chart-card glass-panel" style={{ minWidth: 0 }}><h3 className="chart-title">Top Ciudades</h3>
+          <div style={{ height: '250px', minWidth: 0 }}><ResponsiveContainer width="100%" height="100%"><BarChart data={byCity} margin={{ bottom: 20 }}><XAxis dataKey="name" fontSize={10} stroke="#666" tick={{fill: '#666'}} /><YAxis fontSize={10} stroke="#666" tick={{fill: '#666'}} /><Tooltip contentStyle={{ background: '#111', border: '1px solid #333' }} /><Bar dataKey="leads" fill="#6366f1" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
         </div>
       </div>
     </div>
