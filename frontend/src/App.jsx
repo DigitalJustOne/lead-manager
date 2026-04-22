@@ -164,6 +164,8 @@ function App() {
     
     result = result.filter(lead => {
       // Filtrado por Pestaña (Embudo)
+      // Excluir de la vista maestra los que ya terminaron su ciclo
+      if (activeTab === 'all' && ['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado'].includes(lead.status)) return false;
       if (activeTab === 'pending' && lead.status !== 'Pendiente') return false;
       if (activeTab === 'active' && !['Lead Potencial', 'Contactado', 'Cita Agendada'].includes(lead.status)) return false;
       if (activeTab === 'closed' && !['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado'].includes(lead.status)) return false;
@@ -300,7 +302,7 @@ function App() {
               <div className="flex-col">
                 <h2>Directorio Maestro</h2>
                 <div className="view-tabs mt-2">
-                  <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>Todos</button>
+                  <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>📋 Activos</button>
                   <button className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>📥 Nuevos</button>
                   <button className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>🎯 En Gestión</button>
                   <button className={`tab-btn ${activeTab === 'closed' ? 'active' : ''}`} onClick={() => setActiveTab('closed')}>🏁 Finalizados</button>
