@@ -50,6 +50,7 @@ d:\seguimientos del scrapeo\
 ### 📥 Importación masiva
 - Sube uno o varios archivos Excel/CSV desde Outscraper
 - El backend mapea columnas flexibles (acepta distintos formatos de columna)
+- **Localidades automáticas:** Al subir el archivo, se analiza la dirección para extraer una de las 20 localidades de Bogotá.
 - **Problema conocido:** Leads sin teléfono NI web eran descartados (línea 68 de server.js) — se puede modificar si el usuario quiere importar todos
 
 ### ✏️ Edición manual de leads
@@ -123,6 +124,7 @@ Barra fija en la parte inferior con: Inicio | Clientes | Subir | Más | Salir
 | `website` | text | URL del sitio web |
 | `category` | text | Nicho/categoría |
 | `city` | text | Ciudad (actualmente siempre Bogotá) |
+| `localidad` | text | Localidad de Bogotá (extraída automáticamente de la dirección) |
 | `address` | text | Dirección física ← **DATO MÁS IMPORTANTE** |
 | `rating` | numeric | Calificación Google (0–5 ⭐) |
 | `reviews` | integer | Cantidad de reseñas en Google |
@@ -135,8 +137,8 @@ Barra fija en la parte inferior con: Inicio | Clientes | Subir | Más | Salir
 ## ⚠️ Problemas conocidos / Pendientes
 
 1. **Datos incompletos:** Muchos leads importados no tienen dirección o teléfono porque el Excel del scraper no los incluía. Solución: editar manualmente o re-scrapear con columnas correctas.
-2. **Ciudad siempre es Bogotá:** La columna ciudad fue eliminada de la tabla (se muestra dirección en su lugar). La ciudad podría llenarse automáticamente al importar.
-3. **Filtrado por ubicación:** Se añadió un filtro para buscar por cualquiera de las 20 localidades de Bogotá extrayendo la coincidencia del texto de la dirección. Queda pendiente (opcional) un selector extra por rubro/nicho de belleza en el dashboard.
+2. **Filtros avanzados:** Se añadió extración y filtro automático de Localidades de Bogotá a partir de la dirección.
+3. **Filtrado por nicho:** Falta filtro por categoría/nicho de belleza.
 
 ---
 

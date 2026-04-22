@@ -20,10 +20,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-const LOCALIDADES_BOGOTA = [
-  'Usaquén', 'Chapinero', 'Santa Fe', 'San Cristóbal', 'Usme', 'Tunjuelito', 'Bosa', 'Kennedy', 'Fontibón', 'Engativá', 'Suba', 'Barrios Unidos', 'Teusaquillo', 'Los Mártires', 'Antonio Nariño', 'Puente Aranda', 'La Candelaria', 'Rafael Uribe Uribe', 'Ciudad Bolívar', 'Sumapaz'
-];
-
 const LeadRow = React.memo(({ lead, onOpen }) => (
   <>
     {/* Vista DESKTOP: fila de tabla */}
@@ -36,7 +32,10 @@ const LeadRow = React.memo(({ lead, onOpen }) => (
       <td className="text-sm">
         <div className="flex-item-center" style={{ gap: '6px' }}>
           <MapPin size={14} className="text-muted" />
-          <span className="text-muted truncate" style={{ maxWidth: '200px' }}>{lead.address || 'Sin dirección'}</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className="text-muted truncate" style={{ maxWidth: '200px' }}>{lead.address || 'Sin dirección'}</span>
+            {lead.localidad && <span className="text-xs font-semibold" style={{ color: 'var(--accent-primary)' }}>{lead.localidad}</span>}
+          </div>
         </div>
       </td>
       <td className="text-sm">
@@ -63,7 +62,7 @@ const LeadRow = React.memo(({ lead, onOpen }) => (
           {lead.address && (
             <div className="mobile-lead-row">
               <MapPin size={13} style={{ color: 'var(--accent-secondary)', flexShrink: 0 }} />
-              <span>{lead.address}</span>
+              <span>{lead.address} {lead.localidad && <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>• {lead.localidad}</span>}</span>
             </div>
           )}
           {lead.phone && (
@@ -173,10 +172,7 @@ function App() {
       if (filterStatus !== 'All' && lead.status !== filterStatus) return false;
       if (filterWebsite === 'yes' && !lead.website) return false;
       if (filterWebsite === 'no' && lead.website) return false;
-      if (filterLocalidad !== 'All') {
-        const addrLower = normalize(lead.address);
-        if (!addrLower.includes(normalize(filterLocalidad))) return false;
-      }
+      if (filterLocalidad !== 'All' && lead.localidad !== filterLocalidad) return false;
       return true;
     });
     
@@ -354,14 +350,30 @@ function App() {
                       <option value="no">🚫 Sin Sitio Web</option>
                     </select>
                   </div>
-
                   <div className="select-wrapper">
                     <MapPin size={14} />
                     <select value={filterLocalidad} onChange={e => setFilterLocalidad(e.target.value)}>
                       <option value="All">Cualquier Localidad</option>
-                      {LOCALIDADES_BOGOTA.map(loc => (
-                        <option key={loc} value={loc}>📍 {loc}</option>
-                      ))}
+                      <option value="Usaquén">Usaquén</option>
+                      <option value="Chapinero">Chapinero</option>
+                      <option value="Santa Fe">Santa Fe</option>
+                      <option value="San Cristóbal">San Cristóbal</option>
+                      <option value="Usme">Usme</option>
+                      <option value="Tunjuelito">Tunjuelito</option>
+                      <option value="Bosa">Bosa</option>
+                      <option value="Kennedy">Kennedy</option>
+                      <option value="Fontibón">Fontibón</option>
+                      <option value="Engativá">Engativá</option>
+                      <option value="Suba">Suba</option>
+                      <option value="Barrios Unidos">Barrios Unidos</option>
+                      <option value="Teusaquillo">Teusaquillo</option>
+                      <option value="Los Mártires">Los Mártires</option>
+                      <option value="Antonio Nariño">Antonio Nariño</option>
+                      <option value="Puente Aranda">Puente Aranda</option>
+                      <option value="La Candelaria">La Candelaria</option>
+                      <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
+                      <option value="Ciudad Bolívar">Ciudad Bolívar</option>
+                      <option value="Sumapaz">Sumapaz</option>
                     </select>
                   </div>
                 </div>
@@ -470,6 +482,37 @@ function App() {
                           value={editFormData.city || ''} 
                           onChange={e => setEditFormData({...editFormData, city: e.target.value})}
                         />
+                      </div>
+                      <div className="input-group">
+                        <label>Localidad Bogotá</label>
+                        <select 
+                          className="input-field" 
+                          value={editFormData.localidad || ''} 
+                          onChange={e => setEditFormData({...editFormData, localidad: e.target.value})}
+                          style={{ background: 'var(--bg-dark)', cursor: 'pointer' }}
+                        >
+                          <option value="">— Auto / Desconocida —</option>
+                          <option value="Usaquén">Usaquén</option>
+                          <option value="Chapinero">Chapinero</option>
+                          <option value="Santa Fe">Santa Fe</option>
+                          <option value="San Cristóbal">San Cristóbal</option>
+                          <option value="Usme">Usme</option>
+                          <option value="Tunjuelito">Tunjuelito</option>
+                          <option value="Bosa">Bosa</option>
+                          <option value="Kennedy">Kennedy</option>
+                          <option value="Fontibón">Fontibón</option>
+                          <option value="Engativá">Engativá</option>
+                          <option value="Suba">Suba</option>
+                          <option value="Barrios Unidos">Barrios Unidos</option>
+                          <option value="Teusaquillo">Teusaquillo</option>
+                          <option value="Los Mártires">Los Mártires</option>
+                          <option value="Antonio Nariño">Antonio Nariño</option>
+                          <option value="Puente Aranda">Puente Aranda</option>
+                          <option value="La Candelaria">La Candelaria</option>
+                          <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
+                          <option value="Ciudad Bolívar">Ciudad Bolívar</option>
+                          <option value="Sumapaz">Sumapaz</option>
+                        </select>
                       </div>
                       <div className="input-group">
                         <label>⭐ Calificación (sobre 5)</label>
@@ -689,6 +732,7 @@ function AddManualView({ onSuccess }) {
     website: '',
     category: '',
     city: '',
+    localidad: '',
     address: '',
     status: 'Pendiente',
     notes: ''
@@ -749,7 +793,34 @@ function AddManualView({ onSuccess }) {
 
           <div className="input-group">
             <label>Ciudad</label>
-            <input type="text" name="city" className="input-field" value={formData.city} onChange={handleChange} placeholder="Ej: Medellín" />
+            <input type="text" name="city" className="input-field" value={formData.city} onChange={handleChange} placeholder="Ej: Bogotá" />
+          </div>
+
+          <div className="input-group">
+            <label>Localidad Bogotá</label>
+            <select name="localidad" className="input-field" value={formData.localidad || ''} onChange={handleChange}>
+              <option value="">— Auto Reconocimiento —</option>
+              <option value="Usaquén">Usaquén</option>
+              <option value="Chapinero">Chapinero</option>
+              <option value="Santa Fe">Santa Fe</option>
+              <option value="San Cristóbal">San Cristóbal</option>
+              <option value="Usme">Usme</option>
+              <option value="Tunjuelito">Tunjuelito</option>
+              <option value="Bosa">Bosa</option>
+              <option value="Kennedy">Kennedy</option>
+              <option value="Fontibón">Fontibón</option>
+              <option value="Engativá">Engativá</option>
+              <option value="Suba">Suba</option>
+              <option value="Barrios Unidos">Barrios Unidos</option>
+              <option value="Teusaquillo">Teusaquillo</option>
+              <option value="Los Mártires">Los Mártires</option>
+              <option value="Antonio Nariño">Antonio Nariño</option>
+              <option value="Puente Aranda">Puente Aranda</option>
+              <option value="La Candelaria">La Candelaria</option>
+              <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
+              <option value="Ciudad Bolívar">Ciudad Bolívar</option>
+              <option value="Sumapaz">Sumapaz</option>
+            </select>
           </div>
 
           <div className="input-group" style={{ gridColumn: 'span 2' }}>

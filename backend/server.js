@@ -39,6 +39,23 @@ const parseField = (row, keys) => {
     return '';
 };
 
+const extractLocalidad = (address) => {
+    if (!address) return '';
+    const normalized = address.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const map = {
+        "usaquen": "Usaquén", "chapinero": "Chapinero", "santa fe": "Santa Fe", "san cristobal": "San Cristóbal",
+        "usme": "Usme", "tunjuelito": "Tunjuelito", "bosa": "Bosa", "kennedy": "Kennedy", "fontibon": "Fontibón",
+        "engativa": "Engativá", "suba": "Suba", "barrios unidos": "Barrios Unidos", "teusaquillo": "Teusaquillo",
+        "los martires": "Los Mártires", "antonio narino": "Antonio Nariño", "puente aranda": "Puente Aranda",
+        "la candelaria": "La Candelaria", "rafael uribe": "Rafael Uribe Uribe", "ciudad bolivar": "Ciudad Bolívar",
+        "sumapaz": "Sumapaz"
+    };
+    for (const [key, val] of Object.entries(map)) {
+        if (normalized.includes(key)) return val;
+    }
+    return '';
+};
+
 // Importar Excel Route (Múltiples archivos)
 app.post('/api/upload', upload.array('files'), async (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -85,6 +102,7 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
                             category: category.substring(0, 100),
                             city: city.substring(0, 100),
                             address: address.substring(0, 500),
+                            localidad: extractLocalidad(address),
                             rating: isNaN(rating) ? 0 : rating,
                             reviews: isNaN(reviews) ? 0 : reviews,
                             status: 'Pendiente'
@@ -193,6 +211,7 @@ app.post('/api/leads', async (req, res) => {
             category: (lead.category || '').substring(0, 100),
             city: (lead.city || '').substring(0, 100),
             address: (lead.address || '').substring(0, 500),
+            localidad: lead.localidad ? lead.localidad.substring(0, 100) : extractLocalidad(lead.address || ''),
             rating: parseFloat(lead.rating) || 0,
             reviews: parseInt(lead.reviews) || 0,
             status: lead.status || 'Pendiente',
@@ -218,7 +237,7 @@ app.post('/api/leads', async (req, res) => {
 
 // Update lead fully
 app.put('/api/leads/:id', async (req, res) => {
-    const { status, notes, name, phone, website, category, city, address, rating, reviews } = req.body;
+    const { status, notes, name, phone, website, category, city, address, rating, reviews, localidad } = req.body;
     const { id } = req.params;
 
     try {
@@ -230,7 +249,11 @@ app.put('/api/leads/:id', async (req, res) => {
         if (website !== undefined) updateData.website = website.toString().substring(0, 500);
         if (category !== undefined) updateData.category = category.substring(0, 100);
         if (city !== undefined) updateData.city = city.substring(0, 100);
-        if (address !== undefined) updateData.address = address.substring(0, 500);
+        if (address !== undefined) {
+            updateData.address = address.substring(0, 500);
+            if (localidad === undefined) updateData.localidad = extractLocalidad(address);
+        }
+        if (localidad !== undefined) updateData.localidad = localidad.substring(0, 100);
         if (rating !== undefined) updateData.rating = parseFloat(rating) || 0;
         if (reviews !== undefined) updateData.reviews = parseInt(reviews) || 0;
 
