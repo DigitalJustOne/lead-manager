@@ -164,8 +164,8 @@ function App() {
     
     result = result.filter(lead => {
       // Filtrado por Pestaña (Embudo)
-      // Excluir de la vista maestra los que ya terminaron su ciclo
-      if (activeTab === 'all' && ['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado'].includes(lead.status)) return false;
+      // Excluir de la vista maestra los que ya terminaron su ciclo o están en gestión
+      if (activeTab === 'all' && ['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado', 'Lead Potencial', 'Contactado', 'Cita Agendada'].includes(lead.status)) return false;
       if (activeTab === 'pending' && lead.status !== 'Pendiente') return false;
       if (activeTab === 'active' && !['Lead Potencial', 'Contactado', 'Cita Agendada'].includes(lead.status)) return false;
       if (activeTab === 'closed' && !['Cliente Cerrado', 'Venta Cerrada', 'Lead Perdido', 'Número Equivocado'].includes(lead.status)) return false;
