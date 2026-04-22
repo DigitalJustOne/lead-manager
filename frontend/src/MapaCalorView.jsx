@@ -102,19 +102,19 @@ export default function MapaCalorView({ leads }) {
   };
 
   return (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '16px', gap: '16px', overflowY: 'auto', paddingBottom: '120px' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          🗺️ Mapa de Calor — Bogotá
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          🗺️ Mapa de Calor — Bogotá & Soacha
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-          Densidad de leads por localidad. Pasa el cursor sobre cada zona para ver estadísticas detalladas.
+          Densidad de leads. Pasa el cursor (o toca en móvil) para ver estadísticas.
         </p>
       </div>
 
       {/* Leyenda de colores */}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px' }}>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '4px' }}>Densidad:</span>
         {[
           { color: '#3b82f6', label: 'Baja' },
@@ -124,21 +124,21 @@ export default function MapaCalorView({ leads }) {
           { color: '#ef4444', label: 'Muy alta' },
         ].map(({ color, label }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: color }} />
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: color }} />
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{label}</span>
           </div>
         ))}
       </div>
 
-      {/* Mapa + Ranking side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '20px', flex: 1, minHeight: 0 }}>
+      {/* Mapa + Ranking responsivo */}
+      <div className="map-view-responsive">
         {/* Mapa */}
-        <div style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-color)', minHeight: '450px' }}>
+        <div className="map-container-wrapper" style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-color)', height: '100%', minHeight: '300px' }}>
           <MapContainer
-            center={[4.65, -74.1]}
-            zoom={11}
-            style={{ height: '100%', width: '100%', minHeight: '450px', background: '#0d0d1a' }}
-            zoomControl={true}
+            center={[4.5802, -74.15]}
+            zoom={10}
+            style={{ height: '100%', width: '100%', background: '#0d0d1a' }}
+            zoomControl={false}
           >
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -154,51 +154,53 @@ export default function MapaCalorView({ leads }) {
         </div>
 
         {/* Ranking lateral */}
-        <div className="glass-panel" style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="glass-panel map-ranking-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            🏆 Ranking por Leads
+            🏆 Ranking de Zonas
           </h3>
-          {ranking.length === 0 && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No hay datos de localidades aún.</p>
-          )}
-          {ranking.map(([nombre, stats], i) => (
-            <div
-              key={nombre}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                borderRadius: '10px',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <span style={{
-                fontSize: '11px',
-                fontWeight: 800,
-                color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c2b' : '#444',
-                minWidth: '20px',
-              }}>#{i + 1}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {nombre}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+            {ranking.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>No hay datos aún.</p>
+            )}
+            {ranking.map(([nombre, stats], i) => (
+              <div
+                key={nombre}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border-color)',
+                }}
+              >
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c2b' : '#444',
+                  minWidth: '20px',
+                }}>#{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {nombre}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                    <span style={{ fontSize: '10px', color: '#6366f1' }}>⏳{stats.activos}</span>
+                    <span style={{ fontSize: '10px', color: '#f59e0b' }}>🎯{stats.gestion}</span>
+                    <span style={{ fontSize: '10px', color: '#10b981' }}>✅{stats.cerrados}</span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-                  <span style={{ fontSize: '10px', color: '#6366f1' }}>⏳{stats.activos}</span>
-                  <span style={{ fontSize: '10px', color: '#f59e0b' }}>🎯{stats.gestion}</span>
-                  <span style={{ fontSize: '10px', color: '#10b981' }}>✅{stats.cerrados}</span>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  color: getColor(stats.total, maxCount),
+                }}>
+                  {stats.total}
                 </div>
               </div>
-              <div style={{
-                fontSize: '14px',
-                fontWeight: 800,
-                color: getColor(stats.total, maxCount),
-              }}>
-                {stats.total}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

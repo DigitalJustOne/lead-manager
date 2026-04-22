@@ -379,6 +379,7 @@ function App() {
                       <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
                       <option value="Ciudad Bolívar">Ciudad Bolívar</option>
                       <option value="Sumapaz">Sumapaz</option>
+                      <option value="Soacha">Soacha</option>
                     </select>
                   </div>
                 </div>
@@ -517,6 +518,7 @@ function App() {
                           <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
                           <option value="Ciudad Bolívar">Ciudad Bolívar</option>
                           <option value="Sumapaz">Sumapaz</option>
+                          <option value="Soacha">Soacha</option>
                         </select>
                       </div>
                       <div className="input-group">
@@ -605,6 +607,7 @@ function App() {
       <nav className="mobile-nav">
         <button onClick={() => switchView('dashboard')} className={`mobile-nav-item ${view === 'dashboard' ? 'active' : ''}`}><LayoutDashboard size={24} /><span>Inicio</span></button>
         <button onClick={() => switchView('list')} className={`mobile-nav-item ${view === 'list' ? 'active' : ''}`}><Users size={24} /><span>Clientes</span></button>
+        <button onClick={() => switchView('mapa')} className={`mobile-nav-item ${view === 'mapa' ? 'active' : ''}`}><Map size={24} /><span>Mapa</span></button>
         <button onClick={() => switchView('upload')} className={`mobile-nav-item ${view === 'upload' ? 'active' : ''}`}><Upload size={24} /><span>Subir</span></button>
         <button onClick={() => switchView('add_manual')} className={`mobile-nav-item ${view === 'add_manual' ? 'active' : ''}`}><Plus size={24} /><span>Más</span></button>
         <button onClick={handleLogout} className="mobile-nav-item"><LogOut size={24} /><span>Salir</span></button>
@@ -825,6 +828,7 @@ function AddManualView({ onSuccess }) {
               <option value="Rafael Uribe Uribe">Rafael Uribe Uribe</option>
               <option value="Ciudad Bolívar">Ciudad Bolívar</option>
               <option value="Sumapaz">Sumapaz</option>
+              <option value="Soacha">Soacha</option>
             </select>
           </div>
 

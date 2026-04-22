@@ -486,3 +486,35 @@ body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overf
 .btn-call-premium:active {
   transform: translateY(0);
 }
+
+/* Map View Responsivity */
+.map-view-responsive {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px;
+  flex: 1;
+}
+
+@media (min-width: 1024px) {
+  .map-view-responsive {
+    flex-direction: row !important;
+    align-items: stretch !important;
+  }
+  
+  .map-container-wrapper {
+    flex: 1;
+    min-height: 500px !important;
+  }
+  
+  .map-ranking-panel {
+    width: 320px;
+    height: auto;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .map-container-wrapper {
+    height: 350px !important;
+  }
+}

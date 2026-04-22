@@ -100,6 +100,11 @@
       "type": "Feature",
       "properties": { "nombre": "Sumapaz" },
       "geometry": { "type": "Polygon", "coordinates": [[[-74.45, 4.40], [-74.17, 4.40], [-74.17, 4.15], [-74.45, 4.15], [-74.45, 4.40]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "nombre": "Soacha" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-74.28, 4.60], [-74.22, 4.60], [-74.22, 4.54], [-74.28, 4.54], [-74.28, 4.60]]] }
     }
   ]
 }

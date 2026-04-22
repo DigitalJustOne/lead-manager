@@ -48,7 +48,7 @@ const extractLocalidad = (address) => {
         "engativa": "Engativá", "suba": "Suba", "barrios unidos": "Barrios Unidos", "teusaquillo": "Teusaquillo",
         "los martires": "Los Mártires", "antonio narino": "Antonio Nariño", "puente aranda": "Puente Aranda",
         "la candelaria": "La Candelaria", "rafael uribe": "Rafael Uribe Uribe", "ciudad bolivar": "Ciudad Bolívar",
-        "sumapaz": "Sumapaz"
+        "sumapaz": "Sumapaz", "soacha": "Soacha"
     };
     for (const [key, val] of Object.entries(map)) {
         if (normalized.includes(key)) return val;
