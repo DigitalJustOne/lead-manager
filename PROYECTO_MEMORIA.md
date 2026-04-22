@@ -142,6 +142,8 @@ Barra fija en la parte inferior con: Inicio | Clientes | Subir | Más | Salir
 
 ## 🔑 Credenciales / URLs importantes
 
+- **Repositorio (GitHub):** https://github.com/DigitalJustOne/lead-manager.git
+- **Frontend en producción (Vercel):** https://lead-manager-git-main-digitaljustones-projects.vercel.app/
 - **Frontend local:** http://localhost:5173
 - **Backend local:** http://localhost:3001
 - **Backend en producción:** https://lead-manager-tnxt.onrender.com/api
